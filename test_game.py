@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import unittest
-from game import square2rank
+from game import square2rank, BoardState
 
 
 class TestMisc(unittest.TestCase):
@@ -14,7 +14,9 @@ class TestMisc(unittest.TestCase):
 
 
 class TestGame(unittest.TestCase):
-    pass
+    def test_valid(self):
+        bs = BoardState()
+        self.assertTrue(bs.valid(9, 14))
 
 
 if __name__ == '__main__':
