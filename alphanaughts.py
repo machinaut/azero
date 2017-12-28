@@ -138,39 +138,54 @@ class AlphaNaughts:
         norm = masked / np.sum(masked)
         return np.random.choice(len(norm), p=norm)
 
+    def random(self, state):
+        ''' Sample a random valid move '''
+        if self.done(state) is not None:
+            return None
+        valid = self.valid(state)
+        return np.random.choice(len(valid), p=(valid / np.sum(valid)))
+
     def valid(self, state):
         ''' Return a binary mask for valid moves given a state '''
         # This is super easy because of numpy operators
         return np.asarray(state) == 0
 
     def step(self, state, move):
-        ''' Get the next game state given a move '''
-        # Invert all the pieces on the board (P1 <-> P2 swap)
-        # Make the move -1 (because the previous player placed it)
+        '''
+        Get the next game state given a move.
+        Returns tuple of (next_state, outcome).
+        If the game is done:
+            next_state is None
+            outcome is +1 for last move won, -1 for last move lost, 0 for draw
+        If the game is not done:
+            next_state is the next board state with the players swapped
+            outcome is None
+        '''
         assert state[move] == 0, 'Invalid move {} state {}'.format(move, state)
-        for a, b in self.three(move):
-            if state[a] == 1 and state[b] == 1:
-                return None, +1
-        next_state = tuple(-1 if move == i else -s for i, s in enumerate(state))
-        # Check for empty board slots
-        for s in next_state:
-            if s == 0:  # There is an empty slot
-                return tuple(next_state), None
-        return None, 0  # No free slots, game is a draw
+        next_state = tuple(1 if i == move else s for i, s in enumerate(state))
+        outcome = self.done(next_state)
+        if outcome is not None:
+            return None, outcome
+        return tuple(-s for s in next_state), None
 
-    def three(self, move):
-        ''' Return a generator of pairs to check for win detection '''
-        y0, x0 = divmod(move, 3)
-        y1 = (y0 + 1) % 3
-        y2 = (y1 + 1) % 3
-        x1 = (x0 + 1) % 3
-        x2 = (x1 + 1) % 3
-        yield (y0 * 3 + x1, y0 * 3 + x2)
-        yield (y1 * 3 + x0, y2 * 3 + x0)
-        if move in (0, 4, 8):
-            yield (y1 * 3 + x1, y2 * 3 + x2)
-        if move in (2, 4, 6):
-            yield (y1 * 3 + x2, y2 * 3 + x1)
+    def done(self, state):
+        '''
+        Return if game is done at a state:
+            +1 - Player 1 won
+            -1 - Player 2 won
+             0 - Game ended in a draw
+            None - game is not done yet
+        '''
+        wins = ((0, 1, 2), (3, 4, 5), (6, 7, 8),  # Horizontal
+                (0, 3, 6), (1, 4, 7), (2, 5, 8),  # Vertical
+                (0, 4, 8), (2, 4, 6))  # Diagonal
+        for player in (+1, -1):
+            for a, b, c in wins:
+                if state[a] == state[b] == state[c] == player:
+                    return player
+        if state.count(0) == 0:
+            return 0  # Draw, no more available moves
+        return None
 
     def print(self, state):
         for i in range(3):
