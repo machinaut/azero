@@ -11,9 +11,9 @@ class AlphaZero:
 
     def play(self):
         ''' Self-play a game, return probabilities and outcome '''
-        probs = []  # Pairs of (state, action probabilities from search)
+        trajectory = []  # List of pairs of (state, probabilities from search)
         outcome = None  # +1 for Win, -1 for Loss
-        return probs, outcome
+        return trajectory, outcome
 
     def train(self):
         games = [self.play() for _ in range(GAMES_PER_UPDATE)]

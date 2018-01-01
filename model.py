@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import numpy as np
-from azero import Model
 
 
 class Model:
@@ -20,6 +19,7 @@ class Model:
 
 
 class RandomAgent(Model):
+    ''' The one, the only. '''
     def __init__(self, game):
         self.n_act = len(game.valid(game.start()))
 
@@ -28,3 +28,28 @@ class RandomAgent(Model):
 
     def update(self, games):
         pass
+
+
+class NearestNeighbors(Model):
+    ''' Nearest Neighbors search of training data '''
+    def __init__(self, game):
+        self.data = {}  # Map from tuple(state) -> (probs, outcome)
+        self.n_act = len(game.start())
+        self.n_obs = len(game.valid(game.start()))
+
+    def model(self, state):
+        ''' Nearest neighbor (L2-distance) result '''
+        prior = np.ones(self.n_act) / self.n_act, 0
+        best = None
+        for tstate, result in self.data.items():
+            dist = np.sum(np.square(state - tstate))
+            if best is None or dist < best:
+                best = dist
+                prior = result
+        return prior
+
+    def update(self, games):
+        ''' Save all most-recent observations per state '''
+        for trajectory, outcome in games:
+            for state, probs in trajectory:
+                self.data[tuple(state)] = (probs, outcome)
