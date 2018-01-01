@@ -41,7 +41,7 @@ class RockPaperScissors(Game):
     Actions: 0: rock, 1: paper, 2: scissors
     '''
     def start(self):
-        return np.zeros(1)
+        return np.array([-1])
 
     def valid(self, state):
         return np.ones(3)
@@ -55,4 +55,15 @@ class RockPaperScissors(Game):
             return None, 1  # Win
         if state[0] == (action + 1) % 3:
             return None, -1  # Loss
-        raise ValueError('Invalid state/action')
+
+
+if __name__ == '__main__':
+    game = RockPaperScissors()
+    print('Playing:', type(game))
+    print('Doc:', game.__doc__)
+    state = game.start()
+    while state is not None:
+        print('State:', state)
+        action = int(input('Move:'))
+        state, outcome = game.step(state, action)
+    print('Outcome:', outcome)
