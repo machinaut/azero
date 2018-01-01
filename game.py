@@ -58,7 +58,7 @@ class RockPaperScissors(Game):
 
 
 if __name__ == '__main__':
-    game = RockPaperScissors()
+    game = Bandit()
     print('Playing:', type(game))
     print('Doc:', game.__doc__)
     state = game.start()
