@@ -26,6 +26,8 @@ class TicTacToe(Game):
     def valid(self, state):
         return state[:9] == 0  # Any empty space is a valid move
 
+    def step(self, state)
+
 
 if __name__ == '__main__':
     print('hi')
