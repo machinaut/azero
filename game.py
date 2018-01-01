@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import numpy as np
+
 
 class Game:
     ''' Interface for a game used by alphazero '''
@@ -9,6 +11,10 @@ class Game:
 
     def valid(self, state):
         ''' Return a boolean array of action validity '''
+        raise NotImplementedError()
+
+    def step(self, state, action):
+        ''' Return a pair of (next state or None), (outcome or None) '''
         raise NotImplementedError()
 
 
@@ -21,8 +27,11 @@ class Bandit(Game):
     def start(self):
         return np.random.choice(10, 1)
 
-    def valid(self):
+    def valid(self, state):
         return np.ones(10)
+
+    def step(self, state, action):
+        return None, +1 if state[0] == action else -1
 
 
 class RockPaperScissors(Game):
@@ -34,5 +43,16 @@ class RockPaperScissors(Game):
     def start(self):
         return np.zeros(1)
 
-    def valid(self):
+    def valid(self, state):
         return np.ones(3)
+
+    def step(self, state, action):
+        if state[0] < 0:
+            return np.array([action]), None
+        if state[0] == action:
+            return None, 0  # Tie
+        if state[0] == (action - 1) % 3:
+            return None, 1  # Win
+        if state[0] == (action + 1) % 3:
+            return None, -1  # Loss
+        raise ValueError('Invalid state/action')
