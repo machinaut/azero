@@ -3,7 +3,7 @@
 import numpy as np
 from collections import defaultdict
 
-NUM_UPDATES = 10
+NUM_UPDATES = 100
 GAMES_PER_UPDATE = 10
 SIMS_PER_SEARCH = 10
 C_PUCT = 1.5  # PUCT coefficient controls exploration in search
@@ -62,7 +62,7 @@ class AlphaZero:
         if next_state is None:
             value = outcome
         else:
-            value = self.simulate(child, next_state)
+            value = -self.simulate(child, next_state)
         tree.backup(action, value)
         return value
 
@@ -92,6 +92,7 @@ class AlphaZero:
 
     def train(self):
         for i in range(NUM_UPDATES):
+            print('Update:', i, '/', NUM_UPDATES)
             games = []
             for j in range(GAMES_PER_UPDATE):
                 games.append(self.play())

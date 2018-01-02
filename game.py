@@ -17,6 +17,10 @@ class Game:
         ''' Return a pair of (next state or None), (outcome or None) '''
         raise NotImplementedError()
 
+    def human(self, state):
+        ''' Print out a human-readable state '''
+        return str(state)
+
 
 class Bandit(Game):
     '''
@@ -56,15 +60,59 @@ class RockPaperScissors(Game):
         if state[0] == (action + 1) % 3:
             return None, -1  # Loss
 
+    def human(self, state):
+        return {-1: 'Start', 0: 'Rock', 1: 'Paper', 2: 'Scissors'}[state[0]]
 
-if __name__ == '__main__':
-    game = RockPaperScissors()
+
+class TicTacToe(Game):
+    '''
+    Tic-Tac-Toe
+    State: 10 vector of all 9 positions in order, then player number
+    Actions: Board position to play in
+    '''
+    WINS = ((0, 1, 2), (3, 4, 5), (6, 7, 8), (0, 3, 6),
+            (1, 4, 7), (2, 5, 8), (0, 4, 8), (2, 4, 6))
+
+    def start(self):
+        state = np.array([0] * 9 + [1])
+        state.setflags(write=False)
+        return state
+
+    def valid(self, state):
+        return state[:9] == 0
+
+    def step(self, state, action):
+        assert state[action] == 0, 'Bad step {} {}'.format(state, action)
+        player = state[9]
+        state = state.copy()
+        state[action] = player
+        for a, b, c in self.WINS:
+            if state[a] == state[b] == state[c] == player:
+                return None, +1
+        state[9] = -player  # Next players turn
+        state.setflags(write=False)
+        if 0 not in state:
+            return None, 0  # Draw, no more available moves
+        return state, None
+
+    def human(self, state):
+        s = ''
+        for i in range(0, 9, 3):
+            s += '\n' + ' '.join(str(c) for c in state[i: i + 3])
+        return s
+
+
+def play(game):
     print('Playing:', type(game))
     print('Doc:', game.__doc__)
     state = game.start()
     while state is not None:
-        print('State:', state)
+        print('State:', game.human(state))
         print('Valid:', np.flatnonzero(game.valid(state)))
         action = int(input('Move:'))
         state, outcome = game.step(state, action)
     print('Outcome:', outcome)
+
+
+if __name__ == '__main__':
+    play(TicTacToe())

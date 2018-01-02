@@ -2,8 +2,8 @@
 
 import numpy as np
 from azero import AlphaZero
-from game import RockPaperScissors
-from model import NearestNeighbor
+from game import TicTacToe
+from model import Memorize
 
 
 def play(azero):
@@ -14,16 +14,17 @@ def play(azero):
             player = 'human'
         else:
             player = 'azero'
-        print('Player', player, 'goes first!')
         state = azero.game.start()
         while state is not None:
-            print('State:', state)
+            print('Turn:', player)
+            print('State:', azero.game.human(state))
             if player == 'human':
                 print('Valid:', np.flatnonzero(game.valid(state)))
                 action = int(input('Move:'))
                 player = 'azero'
             elif player == 'azero':
                 probs, _ = azero.model.model(state)
+                probs += np.where(azero.game.valid(state), 0, -np.inf)
                 print('Probs:', probs)
                 action = np.argmax(probs)
                 print('Move:', action)
@@ -31,17 +32,17 @@ def play(azero):
             else:
                 raise ValueError('invalid player!')
             state, outcome = game.step(state, action)
-        if outcome > 0:
-            print('Outcome:', player, 'loses!')
-        elif outcome < 0:
+        if outcome < 0:
             print('Outcome:', player, 'wins!')
+        elif outcome > 0:
+            print('Outcome:', player, 'loses!')
         else:
             print('Outcome: draw!')
 
 
 if __name__ == '__main__':
-    game = RockPaperScissors()
-    model = NearestNeighbor(game)
+    game = TicTacToe()
+    model = Memorize(game)
     azero = AlphaZero(game, model)
     azero.train()
     play(azero)
