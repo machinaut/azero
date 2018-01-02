@@ -30,8 +30,8 @@ class RandomAgent(Model):
         pass
 
 
-class NearestNeighbors(Model):
-    ''' Nearest Neighbors search of training data '''
+class NearestNeighbor(Model):
+    ''' Nearest Neighbor search of training data '''
     def __init__(self, game):
         self.data = {}  # Map from tuple(state) -> (probs, outcome)
         self.n_act = len(game.start())
