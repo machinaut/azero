@@ -43,6 +43,13 @@ class Memorize(Model):
 
     def update(self, games):
         ''' Save all most-recent observations per state '''
+        seen = set()
         for trajectory, outcome in games:
             for state, probs in trajectory:
-                self.data[tuple(state)] = (probs, outcome)
+                tstate = tuple(state)
+                if tstate not in seen:
+                    old_probs, old_value = self.model(state)
+                    new_probs = (old_probs + probs) / 2
+                    new_value = (old_value + outcome) / 2
+                    self.data[tstate] = (new_probs, new_value)
+                    seen.add(tstate)
