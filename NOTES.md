@@ -28,6 +28,7 @@ PUCT:
 ## TODO
 
 AlphaZero:
+- Handle value change-of-sign with subtree move
 - Experiment with different C_PUCT values
 - Control temperature of random search
 - Add noise to move selection
@@ -44,6 +45,7 @@ Games:
 - Maybe just have interface methods to validate state/action
 - Hidden state information (not given to model)
 - Add optional human-readable str(state) function
+- Handle games where moves don't always alternate (e.g. checkers double jump)
 
 Model:
 - Linear model
