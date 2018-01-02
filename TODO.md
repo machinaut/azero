@@ -15,6 +15,7 @@ Games:
 - Validate states, raise on invalid
 - Maybe just have interface methods to validate state/action
 - Hidden state information (not given to model)
+- Add optional human-readable str(state) function
 
 Model:
 - Linear model

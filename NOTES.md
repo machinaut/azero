@@ -20,3 +20,5 @@ Questions from the papers:
     virtual loss:
         What was the virtual loss used?  How was it chosen?
         Was the virtual loss non-constant?
+    PUCT:
+        What were the c_PUCT coefficients chosen?  How were they chosen?
