@@ -121,3 +121,13 @@ class AlphaZero:
             for j in range(GAMES_PER_UPDATE):
                 games.append(self.play())
             self.model.update(games)
+
+
+if __name__ == '__main__':
+    from game import TicTacToe  # noqa
+    from model import Memorize  # noqa
+    NUM_UPDATES = 2  # Faster for profiling purposes
+    game = TicTacToe()
+    model = Memorize(game)
+    az = AlphaZero(game, model)
+    az.train()
