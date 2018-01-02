@@ -17,21 +17,23 @@ class Tree:
     def isLeaf(self):
         return not hasattr(self, 'children')
 
-    def expand(self, probs, value):
+    def expand(self, probs, value, valid):
         ''' Expand tree with results of model '''
         self.children = defaultdict(Tree)  # Map from action -> sub-Tree()
         self.prior = probs
         self.value = value
+        self.valid = valid
         self.T = 0  # Total of all N(s, a) of children
         self.N = np.zeros(len(probs))
         self.W = np.zeros(len(probs))
         self.Q = np.zeros(len(probs))
 
-    def select(self, valid):
+    def select(self):
         ''' Select given valid moves and return action, child '''
         U = C_PUCT * np.sqrt(self.T) * self.prior / (1 + self.N)
         Q = np.where(self.N > 0, self.W / self.N, 0)
-        action = np.argmax(Q + U + np.where(valid, 0, -np.inf))
+        action = np.argmax(np.where(self.valid, Q + U, -np.inf))
+        assert self.valid[action], 'Bad {} {}'.format(self.valid, action)
         return action, self.children[action]
 
     def backup(self, action, value):
@@ -57,9 +59,10 @@ class AlphaZero:
         ''' Simulate a game by traversing tree '''
         if tree.isLeaf():
             probs, value = self.model.model(state)
-            tree.expand(probs, value)
+            valid = self.game.valid(state)
+            tree.expand(probs, value, valid)
             return value
-        action, child = tree.select(self.game.valid(state))
+        action, child = tree.select()
         next_state, outcome = self.game.step(state, action)
         if next_state is None:
             value = outcome
@@ -76,8 +79,9 @@ class AlphaZero:
 
     def sample(self, state, probs):
         ''' Sample a valid action from a vector of action probabilities '''
-        masked = probs * self.game.valid(state)
-        return np.random.choice(len(masked), p=masked / np.sum(masked))
+        move = np.random.choice(len(probs), p=probs / np.sum(probs))
+        assert self.game.valid(state)[move], 'bad {} {}'.format(probs, state)
+        return move
 
     def play(self):
         ''' Self-play a game, return probabilities and outcome '''
