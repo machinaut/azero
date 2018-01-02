@@ -83,9 +83,7 @@ class AlphaZero:
         state = self.game.start()
         tree = Tree()
         while state is not None:
-            print('State:', state)
             probs, tree = self.search(state, tree)
-            print('Probs:', probs)
             trajectory.append((state, probs))
             action = self.sample(state, probs)
             state, outcome = self.game.step(state, action)
@@ -94,9 +92,7 @@ class AlphaZero:
 
     def train(self):
         for i in range(NUM_UPDATES):
-            print('Update:', i)
             games = []
             for j in range(GAMES_PER_UPDATE):
-                print('Game:', j)
                 games.append(self.play())
             self.model.update(games)
