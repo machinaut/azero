@@ -4,10 +4,10 @@ import numpy as np
 from collections import defaultdict
 
 
-NUM_UPDATES = 100
-GAMES_PER_UPDATE = 10
-GAMES_PER_EVAL = 10
-SIMS_PER_SEARCH = 10
+NUM_UPDATES = 25
+GAMES_PER_UPDATE = 25
+GAMES_PER_EVAL = 25
+SIMS_PER_SEARCH = 250
 C_PUCT = 1.5  # PUCT coefficient controls exploration in search
 TAU = 1.0  # Temperature, controls exploration in move selection
 
