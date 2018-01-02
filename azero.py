@@ -3,8 +3,10 @@
 import numpy as np
 from collections import defaultdict
 
+
 NUM_UPDATES = 100
 GAMES_PER_UPDATE = 10
+GAMES_PER_EVAL = 10
 SIMS_PER_SEARCH = 10
 C_PUCT = 1.5  # PUCT coefficient controls exploration in search
 TAU = 1.0  # Temperature, controls exploration in move selection
@@ -90,9 +92,27 @@ class AlphaZero:
             tree = tree.children[tree]  # Re-use subtree for chosen action
         return trajectory, outcome
 
+    def eval(self):
+        total = 0
+        for i in range(GAMES_PER_EVAL):
+            state = self.game.start()
+            playing = bool(i % 2)
+            while state is not None:
+                if playing:
+                    probs, _ = self.search(state, Tree())
+                    action = self.sample(state, probs)
+                else:
+                    valid = self.game.valid(state)
+                    action = np.random.choice(len(valid), p=valid / np.sum(valid))
+                state, outcome = self.game.step(state, action)
+                playing = not playing
+            total += -outcome if playing else outcome
+        return (total + GAMES_PER_EVAL) / (2 * GAMES_PER_EVAL)
+
     def train(self):
         for i in range(NUM_UPDATES):
             print('Update:', i, '/', NUM_UPDATES)
+            print('Eval', self.eval())
             games = []
             for j in range(GAMES_PER_UPDATE):
                 games.append(self.play())
