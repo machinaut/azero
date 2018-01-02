@@ -9,6 +9,7 @@ AlphaZero:
 - Evaluations during training
 - Resignation threshold
 - Find some way to amortize U(s, a) computation
+- Valid move masking on Tree.select() could be improved
 
 Games:
 - Validate actions, raise on invalid (either in game, or out-of-game)

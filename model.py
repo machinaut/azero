@@ -34,8 +34,7 @@ class NearestNeighbor(Model):
     ''' Nearest Neighbor search of training data '''
     def __init__(self, game):
         self.data = {}  # Map from tuple(state) -> (probs, outcome)
-        self.n_act = len(game.start())
-        self.n_obs = len(game.valid(game.start()))
+        self.n_act = len(game.valid(game.start()))
 
     def model(self, state):
         ''' Nearest neighbor (L2-distance) result '''

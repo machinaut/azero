@@ -64,6 +64,7 @@ if __name__ == '__main__':
     state = game.start()
     while state is not None:
         print('State:', state)
+        print('Valid:', np.flatnonzero(game.valid(state)))
         action = int(input('Move:'))
         state, outcome = game.step(state, action)
     print('Outcome:', outcome)

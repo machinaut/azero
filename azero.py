@@ -3,16 +3,17 @@
 import numpy as np
 from collections import defaultdict
 
-NUM_EPOCHS = 100
-GAMES_PER_UPDATE = 100
-SIMS_PER_SEARCH = 100
+NUM_UPDATES = 10
+GAMES_PER_UPDATE = 10
+SIMS_PER_SEARCH = 10
 C_PUCT = 1.5  # PUCT coefficient controlling exploration (see NOTES.md)
+TAU = 1.0  # Temperature, coltrols exploration in move selection
 
 
 class Tree:
     ''' Data structure used during search step '''
     def isLeaf(self):
-        return hasattr(self, 'children')
+        return not hasattr(self, 'children')
 
     def expand(self, probs, value):
         ''' Expand tree with results of model '''
@@ -24,11 +25,11 @@ class Tree:
         self.W = np.zeros(len(probs))
         self.Q = np.zeros(len(probs))
 
-    def select(self):
-        ''' Select and upper-confidence-bound move and return action, child '''
+    def select(self, valid):
+        ''' Select given valid moves and return action, child '''
         U = C_PUCT * np.sqrt(self.T) * self.prior / (1 + self.N)
         Q = np.where(self.N > 0, self.W / self.N, 0)
-        action = np.argmax(Q + U)
+        action = np.argmax(Q + U + np.where(valid, 0, -np.inf))
         return action, self.children[action]
 
     def backup(self, action, value):
@@ -40,7 +41,8 @@ class Tree:
 
     def probs(self):
         ''' Return move probabilities '''
-        return []
+        pi = np.power(self.N, 1 / TAU)
+        return pi / np.sum(pi)
 
 
 class AlphaZero:
@@ -49,20 +51,25 @@ class AlphaZero:
         self.game = game
         self.model = model
 
-    def simulate(self, tree):
+    def simulate(self, tree, state):
         ''' Simulate a game by traversing tree '''
         if tree.isLeaf():
-            probs, value = self.model.model(tree.state)
+            probs, value = self.model.model(state)
             tree.expand(probs, value)
             return value
-        action, child = tree.select()
-        value = self.simulate(child)
+        action, child = tree.select(self.game.valid(state))
+        next_state, outcome = self.game.step(state, action)
+        if next_state is None:
+            value = outcome
+        else:
+            value = self.simulate(child, next_state)
         tree.backup(action, value)
         return value
 
     def search(self, state, tree):
         ''' MCTS to generate move probabilities for a state '''
-        [self.simulate(tree, state) for _ in range(SIMS_PER_SEARCH)]
+        for _ in range(SIMS_PER_SEARCH):
+            self.simulate(tree, state)
         return tree.probs(), tree
 
     def sample(self, state, probs):
@@ -76,14 +83,20 @@ class AlphaZero:
         state = self.game.start()
         tree = Tree()
         while state is not None:
+            print('State:', state)
             probs, tree = self.search(state, tree)
+            print('Probs:', probs)
             trajectory.append((state, probs))
             action = self.sample(state, probs)
             state, outcome = self.game.step(state, action)
             tree = tree.children[tree]  # Re-use subtree for chosen action
         return trajectory, outcome
 
-    def epoch(self):
-        for _ in range(NUM_EPOCHS):
-            games = [self.play() for _ in range(GAMES_PER_UPDATE)]
+    def train(self):
+        for i in range(NUM_UPDATES):
+            print('Update:', i)
+            games = []
+            for j in range(GAMES_PER_UPDATE):
+                print('Game:', j)
+                games.append(self.play())
             self.model.update(games)
