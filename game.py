@@ -70,40 +70,36 @@ class TicTacToe(Game):
     State: 10 vector of all 9 positions in order, then player number
     Actions: Board position to play in
     '''
-    WINS = ((0, 1, 2), (3, 4, 5), (6, 7, 8), (0, 3, 6),
-            (1, 4, 7), (2, 5, 8), (0, 4, 8), (2, 4, 6))
+    START = (0,) * 9 + (1,)
+    WINS = ((0, 1, 2), (0, 3, 6), (0, 4, 8), (1, 4, 7),
+            (2, 4, 6), (2, 5, 8), (3, 4, 5), (6, 7, 8))
 
     def __init__(self):
         self.memo = {}
 
     def start(self):
-        state = np.array([0] * 9 + [1])
-        state.setflags(write=False)
-        return state
+        return self.START
 
     def valid(self, state):
-        return state[:9] == 0
+        return tuple(s == 0 for s in state[:9])
 
     def step(self, state, action):
-        key = (tuple(state), action)
-        if key in self.memo:
-            return self.memo[key]
-        assert state[action] == 0, 'Bad step {} {}'.format(state, action)
-        player = state[9]
-        state = state.copy()
-        state[action] = player
-        for a, b, c in self.WINS:
-            if state[a] == state[b] == state[c] == player:
-                result = None, +1
-                break
-        else:
-            state[9] = -player  # Next players turn
-            state.setflags(write=False)
-            if 0 not in state:
-                result = None, 0  # Draw, no more available moves
+        key = (state, action)
+        result = self.memo.get(key, None)
+        if result is None:
+            assert state[action] == 0, 'Bad step {} {}'.format(state, action)
+            player = state[9]
+            board = tuple(player if i == action else s for i, s in enumerate(state[:9]))
+            for a, b, c in self.WINS:
+                if board[a] == board[b] == board[c] == player:
+                    result = None, +1
+                    break
             else:
-                result = state, None
-        self.memo[key] = result
+                if 0 not in board:
+                    result = None, 0  # Draw, no more available moves
+                else:
+                    result = board + (-player,), None
+            self.memo[key] = result
         return result
 
     def human(self, state):

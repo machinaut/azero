@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
 import numpy as np
+from math import sqrt
 from collections import defaultdict
-
-from util import maybe_profile
 
 
 NUM_UPDATES = 25
@@ -26,24 +25,27 @@ class Tree:
         self.value = value
         self.valid = valid
         self.T = 0  # Total of all N(s, a) of children
+        self.sqrtT = 0  # sqrt(T)
         self.N = np.zeros(len(probs))
         self.W = np.zeros(len(probs))
         self.Q = np.zeros(len(probs))
+        self.P = np.zeros(len(probs))  # self.prior / (1 + self.N)
 
-    @maybe_profile()
     def select(self):
         ''' Select given valid moves and return action, child '''
-        U = C_PUCT * np.sqrt(self.T) * self.prior / (1 + self.N)
+        U = C_PUCT * self.sqrtT * self.P
         action = np.argmax(np.where(self.valid, self.Q + U, -np.inf))
         assert self.valid[action], 'Bad {} {}'.format(self.valid, action)
         return action, self.children[action]
 
     def backup(self, action, value):
         ''' Backup results of a simulation game '''
-        self.T += 1
-        self.N[action] += 1
-        self.W[action] += value
-        self.Q[action] = self.W[action] / self.N[action]
+        self.T = T = self.T + 1
+        self.sqrtT = sqrt(T)  # Python's sqrt() is faster than Numpy's here
+        self.N[action] = N = self.N[action] + 1
+        self.W[action] = W = self.W[action] + value
+        self.Q[action] = W / N
+        self.P[action] = self.prior[action] / (1 + N)
 
     def probs(self):
         ''' Return move probabilities '''

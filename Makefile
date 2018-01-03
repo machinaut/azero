@@ -10,7 +10,8 @@ test: test.py
 
 cprof: azero.py
 	python -m cProfile -s cumtime azero.py > $^.cprof
+	head -40 < $^.cprof
 
 lprof: azero.py
-	kernprof -l $^
+	kernprof -l -b $^
 	python -m line_profiler $^.lprof
