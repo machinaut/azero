@@ -25,7 +25,6 @@ class Tree:
         self.value = value
         self.valid = valid
         self.T = 0  # Total of all N(s, a) of children
-        self.sqrtT = 0  # sqrt(T)
         self.N = np.zeros(len(probs))
         self.W = np.zeros(len(probs))
         self.Q = np.zeros(len(probs))
@@ -33,15 +32,14 @@ class Tree:
 
     def select(self):
         ''' Select given valid moves and return action, child '''
-        U = C_PUCT * self.sqrtT * self.P
+        U = C_PUCT * sqrt(self.T) * self.P
         action = np.argmax(np.where(self.valid, self.Q + U, -np.inf))
         assert self.valid[action], 'Bad {} {}'.format(self.valid, action)
         return action, self.children[action]
 
     def backup(self, action, value):
         ''' Backup results of a simulation game '''
-        self.T = T = self.T + 1
-        self.sqrtT = sqrt(T)  # Python's sqrt() is faster than Numpy's here
+        self.T += 1
         self.N[action] = N = self.N[action] + 1
         self.W[action] = W = self.W[action] + value
         self.Q[action] = W / N
@@ -101,6 +99,7 @@ class AlphaZero:
         return trajectory, outcome
 
     def eval(self):
+        ''' Return win rate against random agent '''
         total = 0
         for i in range(GAMES_PER_EVAL):
             state = self.game.start()
