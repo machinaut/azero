@@ -17,7 +17,7 @@ def play(azero):
             print('Turn:', 'human' if human else 'azero')
             print('State:', azero.game.human(state))
             if human:
-                print('Valid:', np.flatnonzero(game.valid(state)))
+                print('Valid:', np.flatnonzero(np.asarray(game.valid(state))))
                 action = int(input('Move:'))
             else:
                 probs, _ = azero.model.model(state)
