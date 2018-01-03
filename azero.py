@@ -3,6 +3,8 @@
 import numpy as np
 from collections import defaultdict
 
+from util import maybe_profile
+
 
 NUM_UPDATES = 25
 GAMES_PER_UPDATE = 25
@@ -28,11 +30,11 @@ class Tree:
         self.W = np.zeros(len(probs))
         self.Q = np.zeros(len(probs))
 
+    @maybe_profile()
     def select(self):
         ''' Select given valid moves and return action, child '''
         U = C_PUCT * np.sqrt(self.T) * self.prior / (1 + self.N)
-        Q = np.where(self.N > 0, self.W / self.N, 0)
-        action = np.argmax(np.where(self.valid, Q + U, -np.inf))
+        action = np.argmax(np.where(self.valid, self.Q + U, -np.inf))
         assert self.valid[action], 'Bad {} {}'.format(self.valid, action)
         return action, self.children[action]
 
