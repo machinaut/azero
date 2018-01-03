@@ -46,7 +46,6 @@ Games:
 - Hidden state information (not given to model)
 - Add optional human-readable str(state) function
 - Handle games where moves don't always alternate (e.g. checkers double jump)
-- TicTacToe: infer player from board instead of explicitly in state
 
 Model:
 - Linear model

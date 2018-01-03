@@ -90,7 +90,7 @@ class TicTacToe(Game):
     State: 10 vector of all 9 positions in order, then player number
     Actions: Board position to play in
     '''
-    START = (0,) * 9 + (1,)
+    START = (0,) * 9
     WINS = ((0, 1, 2), (0, 3, 6), (0, 4, 8), (1, 4, 7),
             (2, 4, 6), (2, 5, 8), (3, 4, 5), (6, 7, 8))
 
@@ -101,15 +101,15 @@ class TicTacToe(Game):
         return self.START
 
     def valid(self, state):
-        return tuple(s == 0 for s in state[:9])
+        return tuple(s == 0 for s in state)
 
     def step(self, state, action):
         key = (state, action)
         result = self.memo.get(key, None)
         if result is None:
             assert state[action] == 0, 'Bad step {} {}'.format(state, action)
-            player = state[9]
-            board = tuple(player if i == action else s for i, s in enumerate(state[:9]))
+            player = -1 if sum(state) else 1
+            board = tuple(player if i == action else s for i, s in enumerate(state))
             for a, b, c in self.WINS:
                 if board[a] == board[b] == board[c] == player:
                     result = None, +1
@@ -118,7 +118,7 @@ class TicTacToe(Game):
                 if 0 not in board:
                     result = None, 0  # Draw, no more available moves
                 else:
-                    result = board + (-player,), None
+                    result = board, None
             self.memo[key] = result
         return result
 
