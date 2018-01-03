@@ -22,6 +22,26 @@ class Game:
         return str(state)
 
 
+class Count(Game):
+    '''
+    Count up to 9 from 0
+    State: last number counted (starts at 0)
+    Action: next number to count
+    '''
+    def start(self):
+        return (0,)
+
+    def valid(self, state):
+        return (1,) * 10
+
+    def step(self, state, action):
+        if state[0] + 1 == action:
+            if action == 9:
+                return None, +1  # Win
+            return (action,), None  # Next
+        return None, -1  # Lose
+
+
 class Bandit(Game):
     '''
     Perfect-information slot machine:
@@ -115,11 +135,11 @@ def play(game):
     state = game.start()
     while state is not None:
         print('State:', game.human(state))
-        print('Valid:', np.flatnonzero(game.valid(state)))
+        print('Valid:', np.flatnonzero(np.asarray(game.valid(state))))
         action = int(input('Move:'))
         state, outcome = game.step(state, action)
     print('Outcome:', outcome)
 
 
 if __name__ == '__main__':
-    play(TicTacToe())
+    play(Count())
