@@ -1,6 +1,21 @@
 #!/usr/bin/env python
 
-import numpy as np
+import random
+import functools
+from itertools import compress
+
+
+def memoize(func):
+    ''' Decorator to cache results of a method '''
+    # Ref: https://medium.com/@nkhaja/32f607439f84
+    cache = func.cache = {}
+    @functools.wraps(func)  # noqa
+    def memoized_func(*args):
+        key = tuple(args)
+        if key not in cache:
+            cache[key] = func(*args)
+        return cache[key]
+    return memoized_func
 
 
 class Game:
@@ -32,7 +47,7 @@ class Count(Game):
         return (0,)
 
     def valid(self, state):
-        return (1,) * 10
+        return (True,) * 10
 
     def step(self, state, action):
         if state[0] + 1 == action:
@@ -49,10 +64,10 @@ class Bandit(Game):
     Action: Which lever to pull
     '''
     def start(self):
-        return np.random.choice(10, 1)
+        return (random.randint(0, 9),)
 
     def valid(self, state):
-        return np.ones(10)
+        return (True,) * 10
 
     def step(self, state, action):
         return None, +1 if state[0] == action else -1
@@ -65,14 +80,14 @@ class RockPaperScissors(Game):
     Actions: 0: rock, 1: paper, 2: scissors
     '''
     def start(self):
-        return np.array([-1])
+        return (-1,)
 
     def valid(self, state):
-        return np.ones(3)
+        return (True,) * 3
 
     def step(self, state, action):
         if state[0] < 0:
-            return np.array([action]), None
+            return (action,), None
         if state[0] == action:
             return None, 0  # Tie
         if state[0] == (action - 1) % 3:
@@ -94,32 +109,27 @@ class TicTacToe(Game):
     WINS = ((0, 1, 2), (0, 3, 6), (0, 4, 8), (1, 4, 7),
             (2, 4, 6), (2, 5, 8), (3, 4, 5), (6, 7, 8))
 
-    def __init__(self):
-        self.memo = {}
-
     def start(self):
         return self.START
 
+    @memoize
     def valid(self, state):
         return tuple(s == 0 for s in state)
 
+    @memoize
     def step(self, state, action):
-        key = (state, action)
-        result = self.memo.get(key, None)
-        if result is None:
-            assert state[action] == 0, 'Bad step {} {}'.format(state, action)
-            player = -1 if sum(state) else 1
-            board = tuple(player if i == action else s for i, s in enumerate(state))
-            for a, b, c in self.WINS:
-                if board[a] == board[b] == board[c] == player:
-                    result = None, +1
-                    break
+        assert state[action] == 0, 'Bad step {} {}'.format(state, action)
+        player = -1 if sum(state) else 1
+        board = tuple(player if i == action else s for i, s in enumerate(state))
+        for a, b, c in self.WINS:
+            if board[a] == board[b] == board[c] == player:
+                result = None, +1
+                break
+        else:
+            if 0 not in board:
+                result = None, 0  # Draw, no more available moves
             else:
-                if 0 not in board:
-                    result = None, 0  # Draw, no more available moves
-                else:
-                    result = board, None
-            self.memo[key] = result
+                result = board, None
         return result
 
     def human(self, state):
@@ -134,11 +144,15 @@ def play(game):
     print('Doc:', game.__doc__)
     state = game.start()
     while state is not None:
+        valid = game.valid(state)
         print('State:', game.human(state))
-        print('Valid:', np.flatnonzero(np.asarray(game.valid(state))))
+        print('Valid:', list(compress(range(len(valid)), valid)))
         action = int(input('Move:'))
         state, outcome = game.step(state, action)
     print('Outcome:', outcome)
+
+
+games = [Bandit, Count, RockPaperScissors, TicTacToe]
 
 
 if __name__ == '__main__':

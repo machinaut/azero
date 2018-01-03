@@ -1,9 +1,18 @@
 #!/usr/bin/env python
 
-import numpy as np
+import random
+from math import inf
+from itertools import compress
 from azero import AlphaZero
 from game import TicTacToe
 from model import Memorize
+
+
+def select(probs, valid):
+    ''' Select a move for the robot '''
+    assert len(probs) == len(valid)
+    key = lambda x: probs[x] if valid[x] else -inf  # noqa
+    return max(range(len(probs)), key=key)
 
 
 def play(azero):
@@ -11,7 +20,7 @@ def play(azero):
     while True:
         print('\nNew Game!')
         print('Doc:', azero.game.__doc__)
-        human = np.random.random() < .5  # Human starts
+        human = random.random() < .5  # Human starts, coin flip
         state = azero.game.start()
         while state is not None:
             print('Turn:', 'human' if human else 'azero')
@@ -20,16 +29,16 @@ def play(azero):
                 action = None
                 while action is None:
                     valid = game.valid(state)
-                    print('Valid:', np.flatnonzero(np.asarray(valid)))
+                    print('Valid:', list(compress(range(len(valid)), valid)))
                     action = int(input('Move:'))
                     if not valid[action]:
                         print('Invalid move, try again.')
                         action = None
             else:
                 probs, _ = azero.model.model(state)
-                probs += np.where(azero.game.valid(state), 0, -np.inf)
+                valid = azero.game.valid(state)
+                action = select(probs, valid)
                 print('Probs:', probs)
-                action = np.argmax(probs)
                 print('Move:', action)
             human = not human  # Switch players
             state, outcome = game.step(state, action)
