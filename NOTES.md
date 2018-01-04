@@ -29,6 +29,8 @@ PUCT:
 
 AlphaZero:
 - Handle value change-of-sign with subtree move
+- value is value-to-player1, -value is value-to-player2, player1=1, player2=-1
+    - value-to-player = value * player
 - Experiment with different C_PUCT values
 - Control temperature of random search
 - Add noise to move selection
