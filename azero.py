@@ -69,7 +69,7 @@ class AlphaZero:
             tree.expand(state, probs, value, valid)
             return value
         action, child = tree.select()
-        next_state, _, outcome = self.game.step(state, action)  # XXX player!
+        next_state, next_player, outcome = self.game.step(state, action)  # XXX player!
         if next_state is None:
             value = outcome
         else:
@@ -101,7 +101,7 @@ class AlphaZero:
             probs, tree = self.search(state, tree)
             trajectory.append((state, probs))
             action = self.sample(state, probs)
-            state, _, outcome = self.game.step(state, action)  # XXX player!
+            state, player, outcome = self.game.step(state, action)
             tree = tree.children[tree]  # Re-use subtree for chosen action
         return trajectory, outcome
 
@@ -117,7 +117,7 @@ class AlphaZero:
                     action = self.sample(state, probs)
                 else:
                     action = select(self.game.valid(state))
-                state, _, outcome = self.game.step(state, action)  # XXX player!
+                state, player, outcome = self.game.step(state, action)  # XXX player!
                 playing = not playing
             total += -outcome if playing else outcome
         return (total + GAMES_PER_EVAL) / (2 * GAMES_PER_EVAL)
