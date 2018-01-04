@@ -42,6 +42,7 @@ AlphaZero:
 - Trees can be sparse in valid actions (instead of storing values for invalids)
 
 Games:
+- Tic Tac Toe variant where each player gets two moves in a row
 - Validate actions, raise on invalid (either in game, or out-of-game)
 - Validate states, raise on invalid
 - Maybe just have interface methods to validate state/action
