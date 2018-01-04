@@ -30,7 +30,8 @@ class Tree:
         self.N = np.zeros(len(probs), dtype=int)
         self.W = np.zeros(len(probs))
         self.Q = np.zeros(len(probs))
-        self.P = np.zeros(len(probs))  # self.prior / (1 + self.N)
+        # self.P = np.zeros(len(probs))  # self.prior / (1 + self.N)
+        self.P = np.array(self.prior)
 
     def select(self):
         ''' Select given valid moves and return action, child '''
