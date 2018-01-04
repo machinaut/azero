@@ -5,7 +5,7 @@ from itertools import compress
 from azero import AlphaZero
 from game import TicTacToe
 from model import Memorize
-from util import select
+from util import argmax
 
 
 def play(azero):
@@ -30,7 +30,7 @@ def play(azero):
             else:
                 probs, _ = azero.model.model(state)
                 valid = azero.game.valid(state)
-                action = select(probs, valid)
+                action = argmax(probs, valid)
                 print('Probs:', probs)
                 print('Move:', action)
             human = not human  # Switch players

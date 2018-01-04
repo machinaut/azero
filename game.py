@@ -47,11 +47,11 @@ class Count(Game):
         return (0,)
 
     def valid(self, state):
-        return (True,) * 10
+        return (True,) * 3
 
     def step(self, state, action):
         if state[0] + 1 == action:
-            if action == 9:
+            if action == 2:
                 return None, +1  # Win
             return (action,), None  # Next
         return None, -1  # Lose

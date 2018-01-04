@@ -6,10 +6,10 @@ from collections import defaultdict
 from util import select
 
 
-NUM_UPDATES = 10
+NUM_UPDATES = 25
 GAMES_PER_UPDATE = 10
 GAMES_PER_EVAL = 10
-SIMS_PER_SEARCH = 250
+SIMS_PER_SEARCH = 100
 C_PUCT = 1.5  # PUCT coefficient controls exploration in search
 TAU = 1.0  # Temperature, controls exploration in move selection
 
@@ -30,7 +30,6 @@ class Tree:
         self.N = np.zeros(len(probs), dtype=int)
         self.W = np.zeros(len(probs))
         self.Q = np.zeros(len(probs))
-        # self.P = np.zeros(len(probs))  # self.prior / (1 + self.N)
         self.P = np.array(self.prior)
 
     def select(self):
@@ -40,6 +39,12 @@ class Tree:
         assert self.valid[action], 'Bad {} {}'.format(self.valid, action)
         return action, self.children[action]
 
+    def debug(self):
+        ''' Output the upper confidence bound values for debugging '''
+        U = C_PUCT * sqrt(self.T) * self.P
+        values = np.where(self.valid, self.Q + U, -np.inf)
+        return values
+
     def backup(self, action, value):
         ''' Backup results of a simulation game '''
         self.T += 1
@@ -47,11 +52,6 @@ class Tree:
         self.W[action] = W = self.W[action] + value
         self.Q[action] = W / N
         self.P[action] = self.prior[action] / (1 + N)
-
-    def probs(self):
-        ''' Return move probabilities '''
-        pi = np.power(self.N, 1 / TAU)
-        return pi / np.sum(pi)
 
 
 class AlphaZero:
@@ -82,10 +82,12 @@ class AlphaZero:
         assert isinstance(tree, Tree)
         for _ in range(SIMS_PER_SEARCH):
             self.simulate(state, tree)
-        return tree.probs(), tree
+        return tree.N, tree
 
-    def sample(self, state, probs):
+    def sample(self, state, counts):
         ''' Sample a valid action from a vector of action probabilities '''
+        pi = np.power(counts, 1 / TAU)
+        probs = pi / np.sum(pi)
         move = np.random.choice(len(probs), p=probs / np.sum(probs))
         assert self.game.valid(state)[move], 'bad {} {}'.format(probs, state)
         return move
@@ -131,10 +133,10 @@ class AlphaZero:
 
 
 if __name__ == '__main__':
-    from game import TicTacToe  # noqa
+    from game import Count  # noqa
     from model import Memorize  # noqa
     NUM_UPDATES = 2  # Faster for profiling purposes
-    game = TicTacToe()
+    game = Count()
     model = Memorize(game)
     az = AlphaZero(game, model)
     az.train()

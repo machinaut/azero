@@ -15,3 +15,6 @@ cprof: azero.py
 lprof: azero.py
 	kernprof -l -b $^
 	python -m line_profiler $^.lprof
+
+shell: azero.py
+	ipython -i $^

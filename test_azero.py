@@ -36,6 +36,26 @@ class TestAlphaZero(unittest.TestCase):
         self.assertEqual(tree.W.tolist(), [-1., 0., 0.])
         self.assertEqual(tree.Q.tolist(), [-1., 0., 0.])
         self.assertEqual(tree.P.tolist(), [1 / 6, 1 / 6, 1 / 6])
+        value = az.simulate(state, tree)
+        self.assertEqual(value, 1)
+        self.assertEqual(tree.N.tolist(), [1, 2, 1])
+        self.assertEqual(tree.W.tolist(), [-1., 1., 0.])
+        self.assertEqual(tree.Q.tolist(), [-1., 1 / 2, 0.])
+        self.assertEqual(tree.P.tolist(), [1 / 6, 1 / 9, 1 / 6])
+        value = az.simulate(state, tree)
+        self.assertEqual(value, 1)
+        self.assertEqual(tree.N.tolist(), [1, 3, 1])
+        self.assertEqual(tree.W.tolist(), [-1., 2., 0.])
+        self.assertEqual(tree.Q.tolist(), [-1., 2 / 3, 0.])
+        self.assertEqual(tree.P.tolist(), [1 / 6, 1 / 12, 1 / 6])
+        value = az.simulate(state, tree)
+        self.assertEqual(value, 1)
+        self.assertEqual(tree.N.tolist(), [1, 4, 1])
+        self.assertEqual(tree.W.tolist(), [-1., 3., 0.])
+        self.assertEqual(tree.Q.tolist(), [-1., 3 / 4, 0.])
+        self.assertEqual(tree.P.tolist(), [1 / 6, 1 / 15, 1 / 6])
+        [az.simulate(state, tree) for _ in range(20)]  # More simulated rollouts
+        self.assertEqual(tree.N.tolist(), [1, 22, 3])  # Actually did some exploration
 
     def test_select(self):
         game = Narrow()
