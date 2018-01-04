@@ -28,6 +28,7 @@ PUCT:
 ## TODO
 
 AlphaZero:
+- Unroll stack-based simulations to be iterative
 - Handle value change-of-sign with subtree move
 - value is value-to-player1, -value is value-to-player2, player1=1, player2=-1
     - value-to-player = value * player
@@ -42,7 +43,7 @@ AlphaZero:
 - Trees can be sparse in valid actions (instead of storing values for invalids)
 
 Games:
-- Tic Tac Toe variant where each player gets two moves in a row
+- Tic Tac Two: variant where each player gets two moves in a row
 - Validate actions, raise on invalid (either in game, or out-of-game)
 - Validate states, raise on invalid
 - Maybe just have interface methods to validate state/action
