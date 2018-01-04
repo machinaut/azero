@@ -34,10 +34,10 @@ AlphaZero:
 - Add noise to move selection
 - Parallelize simulations (like in the paper, with virtual loss)
 - Tree keeps children as a max-heap of selection value (Q + U)
-- Evaluations during training
 - Resignation threshold
 - Find some way to amortize U(s, a) computation
 - Valid move masking on Tree.select() could be improved
+- Trees can be sparse in valid actions (instead of storing values for invalids)
 
 Games:
 - Validate actions, raise on invalid (either in game, or out-of-game)

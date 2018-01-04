@@ -1,14 +1,8 @@
 #!/usr/bin/env python
 
 import unittest
-from random import choice
-from itertools import compress
 from game import Game, games
-
-
-def select(valid):
-    ''' Select a random valid action '''
-    return choice(list(compress(range(len(valid)), valid)))
+from util import select
 
 
 class TestGame(unittest.TestCase):

@@ -1,18 +1,11 @@
 #!/usr/bin/env python
 
-import random
-from math import inf
+from random import random
 from itertools import compress
 from azero import AlphaZero
 from game import TicTacToe
 from model import Memorize
-
-
-def select(probs, valid):
-    ''' Select a move for the robot '''
-    assert len(probs) == len(valid)
-    key = lambda x: probs[x] if valid[x] else -inf  # noqa
-    return max(range(len(probs)), key=key)
+from util import select
 
 
 def play(azero):
@@ -20,7 +13,7 @@ def play(azero):
     while True:
         print('\nNew Game!')
         print('Doc:', azero.game.__doc__)
-        human = random.random() < .5  # Human starts, coin flip
+        human = random() < .5  # Human starts, coin flip
         state = azero.game.start()
         while state is not None:
             print('Turn:', 'human' if human else 'azero')

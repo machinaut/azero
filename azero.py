@@ -3,6 +3,7 @@
 import numpy as np
 from math import sqrt
 from collections import defaultdict
+from util import select
 
 
 NUM_UPDATES = 10
@@ -14,18 +15,19 @@ TAU = 1.0  # Temperature, controls exploration in move selection
 
 
 class Tree:
-    ''' Data structure used during search step '''
+    ''' Data structure used during simulated games '''
     def isLeaf(self):
         return not hasattr(self, 'children')
 
-    def expand(self, probs, value, valid):
+    def expand(self, state, probs, value, valid):
         ''' Expand tree with results of model '''
         self.children = defaultdict(Tree)  # Map from action -> sub-Tree()
+        self.state = state
         self.prior = probs
         self.value = value
         self.valid = valid
         self.T = 0  # Total of all N(s, a) of children
-        self.N = np.zeros(len(probs))
+        self.N = np.zeros(len(probs), dtype=int)
         self.W = np.zeros(len(probs))
         self.Q = np.zeros(len(probs))
         self.P = np.zeros(len(probs))  # self.prior / (1 + self.N)
@@ -57,26 +59,28 @@ class AlphaZero:
         self.game = game
         self.model = model
 
-    def simulate(self, tree, state):
+    def simulate(self, state, tree):
         ''' Simulate a game by traversing tree '''
+        assert isinstance(tree, Tree)
         if tree.isLeaf():
             probs, value = self.model.model(state)
             valid = self.game.valid(state)
-            tree.expand(probs, value, valid)
+            tree.expand(state, probs, value, valid)
             return value
         action, child = tree.select()
         next_state, outcome = self.game.step(state, action)
         if next_state is None:
             value = outcome
         else:
-            value = -self.simulate(child, next_state)
+            value = -self.simulate(next_state, child)
         tree.backup(action, value)
         return value
 
     def search(self, state, tree):
         ''' MCTS to generate move probabilities for a state '''
+        assert isinstance(tree, Tree)
         for _ in range(SIMS_PER_SEARCH):
-            self.simulate(tree, state)
+            self.simulate(state, tree)
         return tree.probs(), tree
 
     def sample(self, state, probs):
@@ -109,8 +113,7 @@ class AlphaZero:
                     probs, _ = self.search(state, Tree())
                     action = self.sample(state, probs)
                 else:
-                    valid = self.game.valid(state)
-                    action = np.random.choice(len(valid), p=valid / np.sum(valid))
+                    action = select(self.game.valid(state))
                 state, outcome = self.game.step(state, action)
                 playing = not playing
             total += -outcome if playing else outcome

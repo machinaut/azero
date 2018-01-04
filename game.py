@@ -57,6 +57,25 @@ class Count(Game):
         return None, -1  # Lose
 
 
+class Narrow(Game):
+    '''
+    Fewer choices every step
+    State: number of choices in this step
+    Action: number of choices in the next step
+    '''
+    def start(self):
+        return (3,)
+
+    def valid(self, state):
+        return tuple(i < state[0] for i in range(3))
+
+    def step(self, state, action):
+        assert action < state[0]
+        if action == 0:
+            return None, -1
+        return (action,), None
+
+
 class Bandit(Game):
     '''
     Perfect-information slot machine:
@@ -152,7 +171,7 @@ def play(game):
     print('Outcome:', outcome)
 
 
-games = [Bandit, Count, RockPaperScissors, TicTacToe]
+games = [Count, Narrow, Bandit, RockPaperScissors, TicTacToe]
 
 
 if __name__ == '__main__':

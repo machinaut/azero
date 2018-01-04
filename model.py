@@ -18,7 +18,7 @@ class Model:
         raise NotImplementedError()
 
 
-class RandomAgent(Model):
+class Random(Model):
     ''' The one, the only. '''
     def __init__(self, game):
         self.n_act = len(game.valid(game.start()))
