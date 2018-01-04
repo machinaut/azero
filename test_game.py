@@ -28,7 +28,7 @@ class TestGame(unittest.TestCase):
                     with self.assertRaises(AssertionError):
                         game.step(state, inaction)
                 action = select(valid)
-                state, outcome = game.step(state, action)
+                state, _, outcome = game.step(state, action)
                 if state is None:
                     self.assertIsNotNone(outcome)
                 else:

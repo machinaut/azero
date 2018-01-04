@@ -29,7 +29,15 @@ class Game:
         raise NotImplementedError()
 
     def step(self, state, action):
-        ''' Return a pair of (next state or None), (outcome or None) '''
+        '''
+        Return a tuple of (next_state, next_player, outcome):
+            next_state - next game state else None (if game is over)
+            next_player - True if next turn is a different player
+            outcome - None if game is not yet finished
+                      0 if game is a draw
+                      1 if last player won
+                      -1 if last player lost
+        '''
         raise NotImplementedError()
 
     def human(self, state):
@@ -39,7 +47,7 @@ class Game:
 
 class Count(Game):
     '''
-    Count up to 9 from 0
+    Count up from 0
     State: last number counted (starts at 0)
     Action: next number to count
     '''
@@ -52,9 +60,9 @@ class Count(Game):
     def step(self, state, action):
         if state[0] + 1 == action:
             if action == 2:
-                return None, +1  # Win
-            return (action,), None  # Next
-        return None, -1  # Lose
+                return None, False, +1  # Win
+            return (action,), False, None  # Next
+        return None, False, -1  # Lose
 
 
 class Narrow(Game):
@@ -72,8 +80,8 @@ class Narrow(Game):
     def step(self, state, action):
         assert action < state[0]
         if action == 0:
-            return None, -1
-        return (action,), None
+            return None, False, -1
+        return (action,), False, None
 
 
 class Bandit(Game):
@@ -89,7 +97,7 @@ class Bandit(Game):
         return (True,) * 10
 
     def step(self, state, action):
-        return None, +1 if state[0] == action else -1
+        return None, False, +1 if state[0] == action else -1
 
 
 class RockPaperScissors(Game):
@@ -106,13 +114,13 @@ class RockPaperScissors(Game):
 
     def step(self, state, action):
         if state[0] < 0:
-            return (action,), None
+            return (action,), True, None
         if state[0] == action:
-            return None, 0  # Tie
+            return None, False, 0  # Tie
         if state[0] == (action - 1) % 3:
-            return None, 1  # Win
+            return None, False, 1  # Win
         if state[0] == (action + 1) % 3:
-            return None, -1  # Loss
+            return None, False, -1  # Loss
 
     def human(self, state):
         return {-1: 'Start', 0: 'Rock', 1: 'Paper', 2: 'Scissors'}[state[0]]
@@ -142,13 +150,13 @@ class TicTacToe(Game):
         board = tuple(player if i == action else s for i, s in enumerate(state))
         for a, b, c in self.WINS:
             if board[a] == board[b] == board[c] == player:
-                result = None, +1
+                result = None, True, +1
                 break
         else:
             if 0 not in board:
-                result = None, 0  # Draw, no more available moves
+                result = None, True, 0  # Draw, no more available moves
             else:
-                result = board, None
+                result = board, True, None
         return result
 
     def human(self, state):
