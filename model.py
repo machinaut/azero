@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
+from random import choice
 
 
 class Model:
@@ -35,6 +36,7 @@ class Memorize(Model):
     def __init__(self, game):
         self.data = {}  # Map from tuple(state) -> (probs, outcome)
         self.n_act = len(game.valid(game.start()))
+        self.n_updates = 0
 
     def model(self, state):
         ''' Return data if present, else uniform prior '''
@@ -44,8 +46,11 @@ class Memorize(Model):
     def update(self, games):
         ''' Save all most-recent observations per state '''
         for trajectory, outcome in games:
-            for state, probs in trajectory:
-                old_probs, old_value = self.model(state)
-                new_probs = (old_probs + probs) / 2
-                new_value = (old_value + outcome) / 2
-                self.data[tuple(state)] = (new_probs, new_value)
+            # Sample a single random transition from the game to update on
+            state, player, probs = choice(trajectory)
+            alpha = .3
+            old_probs, old_value = self.model(state)
+            new_probs = alpha * old_probs + (1 - alpha) * probs
+            new_value = alpha * old_value + (1 - alpha) * outcome * player
+            self.data[tuple(state)] = (new_probs, new_value)
+        self.n_updates += 1

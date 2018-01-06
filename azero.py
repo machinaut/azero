@@ -23,7 +23,7 @@ class Tree:
         ''' Expand tree with results of model '''
         self.children = defaultdict(Tree)  # Map from action -> sub-Tree()
         self.state = state
-        self.prior = probs
+        self.prior = np.asarray(probs) * valid
         self.value = value
         self.valid = valid
         self.T = 0  # Total of all N(s, a) of children
@@ -79,17 +79,17 @@ class AlphaZero:
         tree.backup(action, value)
         return value
 
-    def search(self, state, player, tree):
+    def search(self, state, player):
         ''' MCTS to generate move probabilities for a state '''
-        assert isinstance(tree, Tree)
+        tree = Tree()
         for _ in range(SIMS_PER_SEARCH):
             self.simulate(state, player, tree)
-        return tree.N, tree
-
-    def sample(self, state, counts):
-        ''' Sample a valid action from a vector of action probabilities '''
-        pi = np.power(counts, 1 / TAU)
+        pi = np.power(tree.N, 1 / TAU)
         probs = pi / np.sum(pi)
+        return probs
+
+    def sample(self, state, probs):
+        ''' Sample a valid action from a vector of action probabilities '''
         move = np.random.choice(len(probs), p=probs / np.sum(probs))
         assert self.game.valid(state)[move], 'bad {} {}'.format(probs, state)
         return move
@@ -99,13 +99,11 @@ class AlphaZero:
         trajectory = []  # List of pairs of (state, probabilities from search)
         state = self.game.start()
         player = 1
-        tree = Tree()
         while state is not None:
-            probs, tree = self.search(state, player, tree)
-            trajectory.append((state, probs))
+            probs = self.search(state, player)
+            trajectory.append((state, player, probs))
             action = self.sample(state, probs)
             state, player, outcome = self.game.step(state, action)
-            tree = tree.children[tree]  # Re-use subtree for chosen action
         return trajectory, outcome
 
     def eval(self):
@@ -117,7 +115,7 @@ class AlphaZero:
             playing = bool(i % 2)
             while state is not None:
                 if playing:
-                    probs, _ = self.search(state, player, Tree())
+                    probs = self.search(state, player)
                     action = self.sample(state, probs)
                 else:
                     action = select(self.game.valid(state))
@@ -137,10 +135,10 @@ class AlphaZero:
 
 
 if __name__ == '__main__':
-    from game import Count  # noqa
+    from game import TicTacToe  # noqa
     from model import Memorize  # noqa
     NUM_UPDATES = 2  # Faster for profiling purposes
-    game = Count()
+    game = TicTacToe()
     model = Memorize(game)
     az = AlphaZero(game, model)
     az.train()

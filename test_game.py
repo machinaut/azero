@@ -17,8 +17,12 @@ class TestGame(unittest.TestCase):
         ''' Randomly play a game many times and check behavior '''
         for _ in range(100):
             state = game.start()
+            player = 1
+            outcome = None
             self.assertIsNotNone(state)
             while state is not None:
+                self.assertIn(player, (1, -1))
+                self.assertIsNone(outcome)
                 valid = game.valid(state)
                 self.assertGreater(sum(valid), 0)
                 self.assertLessEqual(sum(valid), len(valid))
@@ -28,11 +32,10 @@ class TestGame(unittest.TestCase):
                     with self.assertRaises(AssertionError):
                         game.step(state, inaction)
                 action = select(valid)
-                state, _, outcome = game.step(state, action)
-                if state is None:
-                    self.assertIsNotNone(outcome)
-                else:
-                    self.assertIsNone(outcome)
+                state, player, outcome = game.step(state, action)
+            else:
+                self.assertIsNone(player)
+                self.assertIsNotNone(outcome)
             self.assertIn(outcome, (-1, 0, 1))  # only valid outcomes!
 
 

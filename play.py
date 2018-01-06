@@ -10,10 +10,10 @@ from util import argmax
 
 def play(azero):
     ''' Play a game with the human '''
+    human = 1
     while True:
         print('\nNew Game!')
         print('Doc:', azero.game.__doc__)
-        human = 1 if random() < .5 else -1
         state = azero.game.start()
         player = 1
         while state is not None:
@@ -29,7 +29,7 @@ def play(azero):
                         print('Invalid move, try again.')
                         action = None
             else:
-                probs, _ = azero.model.model(state)
+                probs = azero.search(state, player)
                 valid = azero.game.valid(state)
                 action = argmax(probs, valid)
                 print('Probs:', probs)
@@ -40,6 +40,7 @@ def play(azero):
             print('Outcome:', name, 'wins!')
         else:
             print('Outcome: draw!')
+        human = -human  # swap who starts for the next game
 
 
 if __name__ == '__main__':
