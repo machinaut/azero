@@ -6,11 +6,11 @@ from collections import defaultdict
 from util import select
 
 
-NUM_UPDATES = 25
+NUM_UPDATES = 10
 GAMES_PER_UPDATE = 10
 GAMES_PER_EVAL = 10
 SIMS_PER_SEARCH = 100
-C_PUCT = 1.5  # PUCT coefficient controls exploration in search
+C_PUCT = 1.0  # PUCT coefficient controls exploration in search
 TAU = 1.0  # Temperature, controls exploration in move selection
 
 
@@ -60,7 +60,7 @@ class AlphaZero:
         self.game = game
         self.model = model
 
-    def simulate(self, state, tree):
+    def simulate(self, state, player, tree):
         ''' Simulate a game by traversing tree '''
         assert isinstance(tree, Tree)
         if tree.isLeaf():
@@ -69,19 +69,21 @@ class AlphaZero:
             tree.expand(state, probs, value, valid)
             return value
         action, child = tree.select()
-        next_state, next_player, outcome = self.game.step(state, action)  # XXX player!
+        next_state, next_player, outcome = self.game.step(state, action)
         if next_state is None:
             value = outcome
         else:
-            value = self.simulate(next_state, child)
+            # player * next_player is 1 if they are the same (1,1) or (-1,-1)
+            # and is -1 if they are different (-1,1) or (1,-1)
+            value = self.simulate(next_state, next_player, child) * player * next_player
         tree.backup(action, value)
         return value
 
-    def search(self, state, tree):
+    def search(self, state, player, tree):
         ''' MCTS to generate move probabilities for a state '''
         assert isinstance(tree, Tree)
         for _ in range(SIMS_PER_SEARCH):
-            self.simulate(state, tree)
+            self.simulate(state, player, tree)
         return tree.N, tree
 
     def sample(self, state, counts):
@@ -96,9 +98,10 @@ class AlphaZero:
         ''' Self-play a game, return probabilities and outcome '''
         trajectory = []  # List of pairs of (state, probabilities from search)
         state = self.game.start()
+        player = 1
         tree = Tree()
         while state is not None:
-            probs, tree = self.search(state, tree)
+            probs, tree = self.search(state, player, tree)
             trajectory.append((state, probs))
             action = self.sample(state, probs)
             state, player, outcome = self.game.step(state, action)
@@ -110,14 +113,15 @@ class AlphaZero:
         total = 0
         for i in range(GAMES_PER_EVAL):
             state = self.game.start()
+            player = 1
             playing = bool(i % 2)
             while state is not None:
                 if playing:
-                    probs, _ = self.search(state, Tree())
+                    probs, _ = self.search(state, player, Tree())
                     action = self.sample(state, probs)
                 else:
                     action = select(self.game.valid(state))
-                state, player, outcome = self.game.step(state, action)  # XXX player!
+                state, player, outcome = self.game.step(state, action)
                 playing = not playing
             total += -outcome if playing else outcome
         return (total + GAMES_PER_EVAL) / (2 * GAMES_PER_EVAL)

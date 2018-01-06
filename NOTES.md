@@ -41,6 +41,7 @@ AlphaZero:
 - Find some way to amortize U(s, a) computation
 - Valid move masking on Tree.select() could be improved
 - Trees can be sparse in valid actions (instead of storing values for invalids)
+- define __slots__ for classes
 
 Games:
 - Tic Tac Two: variant where each player gets two moves in a row

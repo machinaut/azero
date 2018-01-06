@@ -13,12 +13,13 @@ def play(azero):
     while True:
         print('\nNew Game!')
         print('Doc:', azero.game.__doc__)
-        human = random() < .5  # Human starts, coin flip
+        human = 1 if random() < .5 else -1
         state = azero.game.start()
+        player = 1
         while state is not None:
             print('Turn:', 'human' if human else 'azero')
             print('State:', azero.game.human(state))
-            if human:
+            if player == human:
                 action = None
                 while action is None:
                     valid = game.valid(state)
@@ -33,11 +34,10 @@ def play(azero):
                 action = argmax(probs, valid)
                 print('Probs:', probs)
                 print('Move:', action)
-            human = not human  # Switch players
-            state, outcome = game.step(state, action)
-        player = 'human' if human ^ (outcome > 0) else 'azero'
+            state, player, outcome = game.step(state, action)
         if outcome != 0:
-            print('Outcome:', player, 'wins!')
+            name = 'human' if (human == player) ^ (outcome < 0) else 'azero'
+            print('Outcome:', name, 'wins!')
         else:
             print('Outcome: draw!')
 
