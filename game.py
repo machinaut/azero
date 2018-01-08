@@ -4,6 +4,10 @@ import random
 import functools
 from itertools import compress
 
+import sys
+sys.path.append("../train")
+import checkers
+
 
 def memoize(func):
     ''' Decorator to cache results of a method '''
@@ -164,6 +168,16 @@ class TicTacToe(Game):
         for i in range(0, 9, 3):
             s += '\n' + ' '.join(str(c) for c in state[i: i + 3])
         return s
+
+
+class Checkers(Game):
+
+    def start(self):
+        return checkers.Board()
+
+    def valid(self, state):
+        # TODO
+        pass
 
 
 def play(game):
