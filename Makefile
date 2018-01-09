@@ -1,11 +1,11 @@
 #!/usr/bin/env make
 
 
-.PHONY: all test cprof lprof
+.PHONY: all play cprof lprof
 
-all: test
+all: play
 
-test: test.py
+play: play.py
 	python $^
 
 cprof: azero.py

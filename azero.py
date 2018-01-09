@@ -6,10 +6,10 @@ from collections import defaultdict
 from util import select
 
 
-NUM_UPDATES = 100
+NUM_UPDATES = 10
 GAMES_PER_UPDATE = 10
 GAMES_PER_EVAL = 10
-SIMS_PER_SEARCH = 10
+SIMS_PER_SEARCH = 100
 C_PUCT = 1.0  # PUCT coefficient controls exploration in search
 TAU = 1.0  # Temperature, controls exploration in move selection
 
