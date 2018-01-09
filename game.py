@@ -175,9 +175,35 @@ class Checkers(Game):
     def start(self):
         return checkers.Board()
 
+    def player_type(self, player):
+        if player == 1:
+            return 'white'
+        elif player == -1:
+            return 'black'
+
+        raise ValueError('Invalid player value %s' % player)
+
     def valid(self, state):
-        # TODO
-        pass
+        """Arguments:
+            state: (player, board)
+        """
+        player, board = state
+        return board.valid_moves(self.player_type(player))
+
+    def step(self, state, action):
+        """Arguments:
+            FIXME(prattmic): These need to be the actual numpy planes.
+            state: (player, board)
+            action: (from, to) or None to pass
+        """
+        player, board = state
+
+        # Don't mutate old board.
+        board = board.copy()
+
+        illegal = board.update(action, self.player_type(player))
+        if illegal:
+            raise ValueError('Illegal move %s on %s' % (action, board.state))
 
 
 def play(game):
