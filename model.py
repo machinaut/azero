@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import numpy as np
-from random import choice
 
 
 class Model:
@@ -45,12 +44,12 @@ class Memorize(Model):
 
     def update(self, games):
         ''' Save all most-recent observations per state '''
+        seen = set()
         for trajectory, outcome in games:
-            # Sample a single random transition from the game to update on
-            state, player, probs = choice(trajectory)
-            alpha = .3
-            old_probs, old_value = self.model(state)
-            new_probs = alpha * old_probs + (1 - alpha) * probs
-            new_value = alpha * old_value + (1 - alpha) * outcome * player
-            self.data[tuple(state)] = (new_probs, new_value)
+            for state, player, probs in trajectory:
+                alpha = .1
+                old_probs, old_value = self.model(state)
+                new_probs = alpha * old_probs + (1 - alpha) * probs
+                new_value = alpha * old_value + (1 - alpha) * outcome * player
+                self.data[state] = (new_probs, new_value)
         self.n_updates += 1

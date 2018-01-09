@@ -36,7 +36,7 @@ def play(azero):
                 print('Move:', action)
             state, player, outcome = game.step(state, action)
         if outcome != 0:
-            name = 'human' if (human == player) ^ (outcome < 0) else 'azero'
+            name = 'human' if human == outcome else 'azero'
             print('Outcome:', name, 'wins!')
         else:
             print('Outcome: draw!')
