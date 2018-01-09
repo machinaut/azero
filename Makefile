@@ -1,7 +1,7 @@
 #!/usr/bin/env make
 
 
-.PHONY: all play cprof lprof
+.PHONY: all play cprof lprof shell test
 
 all: play
 
@@ -18,3 +18,6 @@ lprof: azero.py
 
 shell: azero.py
 	ipython -i $^
+
+test:
+	python -m unittest discover .

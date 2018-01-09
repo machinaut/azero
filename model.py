@@ -44,7 +44,6 @@ class Memorize(Model):
 
     def update(self, games):
         ''' Save all most-recent observations per state '''
-        seen = set()
         for trajectory, outcome in games:
             for state, player, probs in trajectory:
                 alpha = .1
@@ -53,3 +52,6 @@ class Memorize(Model):
                 new_value = alpha * old_value + (1 - alpha) * outcome * player
                 self.data[state] = (new_probs, new_value)
         self.n_updates += 1
+
+
+models = [Random, Memorize]
