@@ -27,9 +27,12 @@ PUCT:
 
 ## TODO
 
-### Games:
+Games:
 - Implement `view()` and add tests for it
 
+Util:
+- Clean up unused functions
+- Add tests
 
 ## Old TODO
 
