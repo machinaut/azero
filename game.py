@@ -2,185 +2,266 @@
 
 import random
 import functools
-from itertools import compress
-
-
-def memoize(func):
-    ''' Decorator to cache results of a method '''
-    # Ref: https://medium.com/@nkhaja/32f607439f84
-    cache = func.cache = {}
-    @functools.wraps(func)  # noqa
-    def memoized_func(*args):
-        key = tuple(args)
-        if key not in cache:
-            cache[key] = func(*args)
-        return cache[key]
-    return memoized_func
 
 
 class Game:
-    ''' Interface for a game used by alphazero '''
+    ''' Interface class for a game to be optimized by alphazero algorithm '''
+    n_action = 0
+    n_state = 0
+    n_player = 1
+
+    def __init__(self, seed=None) -> None:
+        self.random = random.Random(seed)
+
     def start(self):
-        ''' Return a start state (player1 always starts) '''
-        raise NotImplementedError()
-
-    def valid(self, state):
-        ''' Return a boolean array of action validity '''
-        raise NotImplementedError()
-
-    def step(self, state, action):
         '''
-        Return a tuple of (next_state, next_player, outcome):
-            next_state - next game state else None (if game is over)
-            next_player - 1 if player1, -1 if player2 (None if game is over)
-            outcome - None if game is not yet finished
-                      0 if game is a draw
-                      1 if first player won
-                      -1 if first player lost
+        Start a new game, returns
+            state - game state object (can be None)
+            player - index of the next player
+            outcome - index of winning player or None if game is not over
         '''
-        raise NotImplementedError()
+        state, player, outcome = self._start()
+        assert len(state) == self.n_state
+        if outcome is None:
+            assert 0 <= player < self.n_action
+        else:
+            assert player == -1
+            assert outcome < self.n_player
+        return state, player, outcome
+
+    def _start(self):
+        raise NotImplementedError('Implement in subclass')
+
+    def step(self, state, player, action):
+        '''
+        Advance the game by one turn
+            state - game state object (can be None)
+            player - player making current move
+            action - move to be played next
+        Returns
+            state - next state object (can be None)
+            player - next player index or None if game is over
+            outcome - index of winning player or None if game is not over
+        '''
+        assert len(state) == self.n_state
+        assert 0 <= player < self.n_player
+        assert 0 <= action < self.n_action
+        state, player, outcome = self._step(state, player, action)
+        assert len(state) == self.n_state
+        if outcome is None:
+            assert 0 <= player < self.n_action
+        else:
+            assert player == -1
+            assert outcome < self.n_player
+        return state, player, outcome
+
+    def _step(self, state, player, action):
+        raise NotImplementedError('Implement in subclass')
+
+    def valid(self, state, player):
+        '''
+        Get a mask of valid actions for a given state.
+            state - game state object
+            player - next player index
+        Returns:
+            mask - tuple of booleans marking actions as valid or not
+        '''
+        assert len(state) == self.n_state
+        assert 0 <= player < self.n_player
+        valid = self._valid(state, player)
+        assert len(valid) == self.n_action
+        return valid
+
+    def _valid(self, state, player):
+        raise NotImplementedError('Implement in subclass')
 
     def human(self, state):
         ''' Print out a human-readable state '''
         return str(state)
 
 
+class Null(Game):
+    ''' Null game, always lose '''
+    def _start(self):
+        return (), -1, -1
+
+    def _valid(self, state, player):
+        assert False
+
+
+class Binary(Game):
+    ''' Single move game, 0 - loses, 1 - wins '''
+    n_action = 2
+    n_state = 1
+    n_player = 1
+
+    def _start(self):
+        return (0,), 0, None
+
+    def _step(self, state, player, action):
+        assert state == (0,)
+        assert 0 <= action < 2
+        outcome = 0 if action == 1 else -1
+        return (-1,), -1, outcome
+
+    def _valid(self, state, player):
+        assert state == (0,)
+        return (True, True)
+
+
+class Flip(Game):
+    ''' Guess a coin flip '''
+    n_action = 2
+    n_state = 1
+    n_player = 1
+
+    def _start(self):
+        coin = self.random.randrange(2)
+        return (coin,), 0, None
+
+    def _step(self, state, player, action):
+        assert len(state) == 1
+        assert 0 <= state[0] < 2
+        assert 0 <= action < 2
+        outcome = 0 if action == state[0] else -1
+        return (-1,), -1, outcome
+
+    def _valid(self, state, player):
+        assert 0 <= state[0] < 2
+        return (True, True)
+
+
 class Count(Game):
-    '''
-    Count up from 0
-    State: last number counted (starts at 0)
-    Action: next number to count
-    '''
-    def start(self):
-        return (0,)
+    ''' Count to 3 '''
+    n_action = 3
+    n_state = 1
+    n_player = 1
 
-    def valid(self, state):
-        return (True,) * 3
+    def _start(self):
+        return (0,), 0, None
 
-    def step(self, state, action):
-        if state[0] + 1 == action:
-            if action == 2:
-                return None, None, +1  # Win
-            return (action,), 1, None  # Next
-        return None, None, -1  # Lose
+    def _step(self, state, player, action):
+        count, = state
+        assert 0 <= count < 3
+        if action != count:
+            return (-1,), -1, -1  # A loser is you
+        if action == count == 2:
+            return (-1,), -1, 0  # A winner is you
+        return (count + 1,), 0, None
+
+    def _valid(self, state, player):
+        count, = state
+        assert 0 <= count < 3
+        return (True, True, True)
 
 
 class Narrow(Game):
-    '''
-    Fewer choices every step
-    State: number of choices in this step
-    Action: number of choices in the next step
-    '''
-    def start(self):
-        return (3,)
+    ''' Fewer choices every step '''
+    n_action = 3
+    n_state = 1
+    n_player = 1
 
-    def valid(self, state):
-        return tuple(i < state[0] for i in range(3))
+    def _start(self):
+        return (2,), 0, None
 
-    def step(self, state, action):
-        assert action < state[0]
+    def _step(self, state, player, action):
+        assert 0 <= state[0] < 3
+        assert 0 <= action <= state[0]
         if action == 0:
-            return None, None, -1
-        return (action,), 1, None
+            return (-1,), -1, -1
+        return (action,), 0, None
+
+    def _valid(self, state, player):
+        assert 0 <= state[0] < 3
+        return tuple(i <= state[0] for i in range(3))
 
 
-class Bandit(Game):
-    '''
-    Perfect-information slot machine:
-    State: Action which wins (all other actions lose)
-    Action: Which lever to pull
-    '''
-    def start(self):
-        return (random.randint(0, 9),)
+class Matching(Game):
+    ''' Matching Pennies '''
+    n_action = 2
+    n_state = 1
+    n_player = 2
 
-    def valid(self, state):
-        return (True,) * 10
+    def _start(self):
+        return (-1,), 0, None
 
-    def step(self, state, action):
-        return None, None, +1 if state[0] == action else -1
-
-
-class RockPaperScissors(Game):
-    '''
-    Turn-based Rock-Paper-Scissors (second player should always win)
-    State: -1: First players turn, 0: rock, 1: paper, 2: scissors
-    Actions: 0: rock, 1: paper, 2: scissors
-    '''
-    def start(self):
-        return (-1,)
-
-    def valid(self, state):
-        return (True,) * 3
-
-    def step(self, state, action):
-        if state[0] < 0:
-            return (action,), -1, None
-        if state[0] == action:
-            return None, None, 0  # Draw
-        if state[0] == (action - 1) % 3:
-            return None, None, -1  # P2 Wins
-        if state[0] == (action + 1) % 3:
-            return None, None, 1  # P1 Wins
-
-    def human(self, state):
-        return {-1: 'Start', 0: 'Rock', 1: 'Paper', 2: 'Scissors'}[state[0]]
-
-
-class TicTacToe(Game):
-    '''
-    Tic-Tac-Toe
-    State: 10 vector of all 9 positions in order, then player number
-    Actions: Board position to play in
-    '''
-    START = (0,) * 9
-    WINS = ((0, 1, 2), (0, 3, 6), (0, 4, 8), (1, 4, 7),
-            (2, 4, 6), (2, 5, 8), (3, 4, 5), (6, 7, 8))
-
-    def start(self):
-        return self.START
-
-    @memoize
-    def valid(self, state):
-        return tuple(s == 0 for s in state)
-
-    @memoize
-    def step(self, state, action):
-        assert state[action] == 0, 'Bad step {} {}'.format(state, action)
-        player = -1 if sum(state) else 1
-        board = tuple(player if i == action else s for i, s in enumerate(state))
-        for a, b, c in self.WINS:
-            if board[a] == board[b] == board[c] == player:
-                result = None, None, player
-                break
+    def _step(self, state, player, action):
+        assert -1 <= state[0] < 2
+        if state[0] == -1:
+            assert player == 0
+            return (action,), 1, None
         else:
-            if 0 not in board:
-                result = None, None, 0  # Draw, no more available moves
+            assert player == 1
+            outcome = 0 if state[0] == action else 1
+            return (2,), -1, outcome
+
+    def _valid(self, state, player):
+        assert -1 <= state[0] < 2
+        if state[0] == -1:
+            assert player == 0
+        else:
+            assert player == 1
+        return (True, True)
+
+
+class Roshambo(Game):
+    ''' Rock Paper Scissors '''
+    n_action = 3
+    n_state = 2
+    n_player = 2
+
+    def _start(self):
+        return (0, 0), 0, None
+
+    def _step(self, state, player, action):
+        roshambo, current = state
+        assert 0 <= roshambo < 3
+        assert 0 <= current < 2
+        assert current == player
+        if current == 0:
+            return (action, 1), 1, None
+        else:
+            if (action - 1) % 3 == roshambo:
+                return (3, -1), -1, 0  # First player wins
+            elif (action + 1) % 3 == roshambo:
+                return (3, -1), -1, 1  # Second player wins
             else:
-                result = board, -player, None
-        return result
+                assert action == roshambo
+                return (3, -1), -1, -1  # Tie, both lose
 
-    def human(self, state):
-        s = ''
-        for i in range(0, 9, 3):
-            s += '\n' + ' '.join(str(c) for c in state[i: i + 3])
-        return s
-
-
-def play(game):
-    print('Playing:', type(game))
-    print('Doc:', game.__doc__)
-    state = game.start()
-    while state is not None:
-        valid = game.valid(state)
-        print('State:', game.human(state))
-        print('Valid:', list(compress(range(len(valid)), valid)))
-        action = int(input('Move:'))
-        state, outcome = game.step(state, action)
-    print('Outcome:', outcome)
+    def _valid(self, state, player):
+        roshambo, current = state
+        assert -1 <= roshambo < 3
+        assert current == player
+        return (True, True, True)
 
 
-games = [Count, Narrow, Bandit, RockPaperScissors, TicTacToe]
+class Modulo(Game):
+    ''' player mod 3 '''
+    n_action = 3
+    n_state = 2
+    n_player = 3
+
+    def _start(self):
+        return (0, 0), 0, None
+
+    def _step(self, state, player, action):
+        total, current = state
+        assert 0 <= total < 6
+        assert player == current
+        total += action
+        current += 1
+        if player < 2:
+            return (total, current), current, None
+        else:
+            outcome = total % 3
+            return (-1, -1), -1, outcome
+
+    def _valid(self, state, player):
+        total, current = state
+        assert 0 <= total < 6
+        assert player == current
+        return (True, True, True)
 
 
-if __name__ == '__main__':
-    play(Count())
+games = [Null, Binary, Flip, Count, Narrow, Matching, Roshambo, Modulo]

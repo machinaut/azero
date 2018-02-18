@@ -75,7 +75,8 @@ class AlphaZero:
         else:
             # player * next_player is 1 if they are the same (1,1) or (-1,-1)
             # and is -1 if they are different (-1,1) or (1,-1)
-            value = self.simulate(next_state, next_player, child) * player * next_player
+            value = (self.simulate(next_state, next_player, child) *
+                     player * next_player)
         tree.backup(action, value)
         return value
 

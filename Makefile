@@ -1,9 +1,10 @@
 #!/usr/bin/env make
 
+FILES = azero.py game.py model.py
 
 .PHONY: all play cprof lprof shell test
 
-all: play
+all: test
 
 play: play.py
 	python $^
@@ -19,5 +20,8 @@ lprof: azero.py
 shell: azero.py
 	ipython -i $^
 
-test:
-	python -m unittest discover .
+lint:
+	flake8 $(FILES)
+
+test: lint
+	python -m unittest
