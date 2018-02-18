@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import argparse
 import random
 
 
@@ -74,6 +73,19 @@ class Game:
 
     def _valid(self, state, player):
         raise NotImplementedError('Implement in subclass')
+
+    def view(self, state, player):
+        '''
+        Get a subset of the state that is observable to the player
+            state - game state
+            player - next player index
+        Returns:
+            view - subset of state visible to player
+        '''
+        return self._view(state, player)
+
+    def _view(self, state, player):
+        return state  # default to full visibility
 
     def human(self, state):
         ''' Print out a human-readable state '''

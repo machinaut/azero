@@ -5,7 +5,6 @@ import unittest
 from game import (games, Game,
                   Null, Binary, Flip, Count, Narrow, Matching, Roshambo,
                   Modulo)
-from util import select
 
 N = 100
 

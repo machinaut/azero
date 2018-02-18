@@ -27,6 +27,12 @@ PUCT:
 
 ## TODO
 
+### Games:
+- Implement `view()` and add tests for it
+
+
+## Old TODO
+
 AlphaZero:
 - Unroll stack-based simulations to be iterative
 - Handle value change-of-sign with subtree move
