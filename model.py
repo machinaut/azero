@@ -10,11 +10,14 @@ class Model:
         raise NotImplementedError()
 
     def model(self, state):
-        ''' Return action probability vector and outcome prediction '''
+        ''' Return action probability logits and outcome prediction '''
         raise NotImplementedError()
 
     def update(self, games):
-        ''' Update model given games (lists of pairs of probs, outcome)'''
+        '''
+        Update model given list of games,
+        where each game is a list of (state, player, logits)
+        '''
         raise NotImplementedError()
 
 
@@ -24,7 +27,7 @@ class Random(Model):
         self.n_act = len(game.valid(game.start()))
 
     def model(self, state):
-        return np.ones(self.n_act) / self.n_act, 0
+        return np.zeros(self.n_act)
 
     def update(self, games):
         pass
@@ -39,18 +42,13 @@ class Memorize(Model):
 
     def model(self, state):
         ''' Return data if present, else uniform prior '''
-        prior = np.ones(self.n_act) / self.n_act, 0
-        return self.data.get(tuple(state), prior)
+        return self.data.get(tuple(state), (np.zeros(self.n_act), 0))
 
     def update(self, games):
         ''' Save all most-recent observations per state '''
         for trajectory, outcome in games:
-            for state, player, probs in trajectory:
-                alpha = .1
-                old_probs, old_value = self.model(state)
-                new_probs = alpha * old_probs + (1 - alpha) * probs
-                new_value = alpha * old_value + (1 - alpha) * outcome * player
-                self.data[state] = (new_probs, new_value)
+            for state, player, logits in trajectory:
+                self.data[state] = logits, outcome * player
         self.n_updates += 1
 
 

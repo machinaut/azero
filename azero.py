@@ -6,7 +6,7 @@ from collections import defaultdict
 from util import select
 
 
-NUM_UPDATES = 10
+NUM_UPDATES = 100
 GAMES_PER_UPDATE = 10
 GAMES_PER_EVAL = 10
 SIMS_PER_SEARCH = 100
