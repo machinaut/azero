@@ -98,6 +98,8 @@ class TestGames(unittest.TestCase):
         with self.assertRaises(AssertionError):
             self.check_trajectory(Narrow(), (1, 1), -1)
         with self.assertRaises(AssertionError):
+            self.check_trajectory(Narrow(), (2, 2), -1)
+        with self.assertRaises(AssertionError):
             self.check_trajectory(Narrow(), (3,), -1)
         self.check_trajectory(Matching(), (0, 0), 0)
         self.check_trajectory(Matching(), (0, 1), 1)

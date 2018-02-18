@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
+import argparse
 import random
-import functools
 
 
 class Game:
@@ -162,18 +162,18 @@ class Narrow(Game):
     n_player = 1
 
     def _start(self):
-        return (2,), 0, None
+        return (3,), 0, None
 
     def _step(self, state, player, action):
-        assert 0 <= state[0] < 3
-        assert 0 <= action <= state[0]
+        assert 0 <= state[0] <= 3
+        assert 0 <= action < state[0]
         if action == 0:
             return (-1,), -1, -1
         return (action,), 0, None
 
     def _valid(self, state, player):
-        assert 0 <= state[0] < 3
-        return tuple(i <= state[0] for i in range(3))
+        assert 0 <= state[0] <= 3
+        return tuple(i < state[0] for i in range(3))
 
 
 class Matching(Game):
@@ -265,3 +265,16 @@ class Modulo(Game):
 
 
 games = [Null, Binary, Flip, Count, Narrow, Matching, Roshambo, Modulo]
+
+
+if __name__ == '__main__':
+    from play import play  # noqa
+    names = [g.__name__ for g in games]
+    choices = {g.__name__: g for g in games}
+    default = random.choice(names)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('game', nargs='?', default=default, choices=names,
+                        help='Which game to play (default is randomly chosen)')
+    args = parser.parse_args()
+    game = choices[args.game]()
+    play(game)
