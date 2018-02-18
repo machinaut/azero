@@ -119,8 +119,10 @@ class AlphaZero:
                     action = self.sample(state, probs)
                 else:
                     action = select(self.game.valid(state))
+                old_player = player
                 state, player, outcome = self.game.step(state, action)
-                playing = not playing
+                if old_player != player:
+                    playing = not playing
             total += -outcome if playing else outcome
         return (total + GAMES_PER_EVAL) / (2 * GAMES_PER_EVAL)
 
