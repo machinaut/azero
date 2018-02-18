@@ -268,13 +268,5 @@ games = [Null, Binary, Flip, Count, Narrow, Matching, Roshambo, Modulo]
 
 
 if __name__ == '__main__':
-    from play import play  # noqa
-    names = [g.__name__ for g in games]
-    choices = {g.__name__: g for g in games}
-    default = random.choice(names)
-    parser = argparse.ArgumentParser()
-    parser.add_argument('game', nargs='?', default=default, choices=names,
-                        help='Which game to play (default is randomly chosen)')
-    args = parser.parse_args()
-    game = choices[args.game]()
-    play(game)
+    from play import main  # noqa
+    main()
