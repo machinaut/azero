@@ -31,6 +31,7 @@ Noise:
 ## TODO
 
 Azero:
+- Update search to use n_player length value predictions from the model
 - Per-action update `U` instead of re-computing the whole vector every time
 - Update player values when we observe opponent changing value (during backup)
 - Tune how much to update based on an outcome farther down the tree
@@ -38,6 +39,8 @@ Azero:
 - Do something useful with first value from evaluating tree at root node
 
 Models:
+- Models should return n_player length vector of values
+    - these will be updated to predict expected sum of future rewards ~ outcome
 - Add RBF network
 - Add MLP network
 
@@ -62,6 +65,13 @@ Hypers:
     - Varied by game in Alpha{Go}Zero
     - Possibly intelligently tune over training?
     - Would be good to measure how much more information each one gives us
+- loss function on value predictions
+    - AlphaGoZero uses MSE, I think black value = -white value here
+    - For multi-player value predictions, I think L2 is a good place to start
+    - Cosine loss might also work well, given sum(all rewards) = constant
+    - Notably *not* using crossentropy, because not interpreting value as prob
+- Exploration noise
+    - AlphaZero added Dirichlet noise, maybe try implementing that first
 
 
 ## Old TODO
