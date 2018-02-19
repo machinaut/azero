@@ -32,6 +32,7 @@ Azero:
 - Update player values when we observe opponent changing value (during backup)
 - Tune how much to update based on an outcome farther down the tree
 - Re-use tree between moves
+- Do something useful with first value from evaluating tree at root node
 
 Models:
 - Add RBF network
