@@ -31,8 +31,7 @@ Games:
 - Implement `view()` and add tests for it
 - Unit test that there's no mutual information between (valid) and (state|view)
 
-Util:
-- Clean up unused functions
+Utils:
 - Add tests
 
 ## Old TODO
