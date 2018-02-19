@@ -109,15 +109,6 @@ class Game:
         return str(state)
 
 
-class Null(Game):
-    ''' Null game, always lose '''
-    def _start(self):
-        return (), -1, -1
-
-    def _valid(self, state, player):
-        assert False
-
-
 class Binary(Game):
     ''' Single move game, 0 - loses, 1 - wins '''
     n_action = 2
@@ -296,7 +287,7 @@ class Modulo(Game):
         assert player == current
 
 
-games = [Null, Binary, Flip, Count, Narrow, Matching, Roshambo, Modulo]
+games = [Binary, Flip, Count, Narrow, Matching, Roshambo, Modulo]
 
 
 if __name__ == '__main__':

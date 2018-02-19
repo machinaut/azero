@@ -27,9 +27,19 @@ PUCT:
 
 ## TODO
 
+Azero:
+- Per-action update `U` instead of re-computing the whole vector every time
+- Update player values when we observe opponent changing value (during backup)
+- Tune how much to update based on an outcome farther down the tree
+- Re-use tree between moves
+
+Models:
+- Add RBF network
+- Add MLP network
+
 Games:
-- Implement `view()` and add tests for it
 - Unit test that there's no mutual information between (valid) and (state|view)
+- Add 3-player tic tac toe game
 
 Utils:
 - Add tests
