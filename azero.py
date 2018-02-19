@@ -4,14 +4,10 @@ import numpy as np
 from util import view2obs, softmax
 
 
-SIMS_PER_SEARCH = 10
-C_PUCT = 1.0  # PUCT coefficient controls exploration in search
-TAU = 1.0  # Temperature, controls exploration in move selection
-
-
 class Tree:
     ''' Data structure used during simulated games '''
-    def __init__(self, prior):
+    def __init__(self, prior, c_puct):
+        self.c_puct = c_puct
         self.T = 0  # Total visits
         self.N = np.zeros(len(prior), dtype=int)  # Visit count
         self.W = np.zeros(len(prior))  # Total action-value
@@ -21,15 +17,19 @@ class Tree:
         self.children = dict()
 
     def leaf(self, action, prior):
-        self.children[action] = Tree(prior)
+        self.children[action] = Tree(prior, c_puct=self.c_puct)
 
     @property
-    def U(self):
-        return C_PUCT * np.sqrt(self.T) * self.P
+    def U(self):  # Upper Confidence Bound
+        return self.c_puct * np.sqrt(self.T) * self.P
+
+    @property
+    def values(self):  # Mean action value + UCB == Q + U
+        return self.Q + self.U
 
     def select(self):
         ''' Select given valid moves and return action, child '''
-        action = np.argmax(self.Q + self.U)
+        action = np.argmax(self.values)
         return action, self.children.get(action, None)
 
     def backup(self, action, value):
@@ -42,10 +42,16 @@ class Tree:
 
 
 class AlphaZero:
-    def __init__(self, game, model):
+    def __init__(self, game, model,
+                 c_puct=1.0,
+                 tau=1.0,
+                 sims_per_search=100):
         ''' Train a model to play a game with the AlphaZero algorithm '''
         self._game = game
         self._model = model
+        self.c_puct = c_puct
+        self.tau = tau
+        self.sims_per_search = sims_per_search
 
     def step(self, state, player, action):
         ''' Wrap game action to check for valid moves '''
@@ -68,37 +74,47 @@ class AlphaZero:
             state - game state tuple
             player - current player index
             tree - MCTS tree rooted at current state
-        returns
-            value - value of leaf state
-            player - player the value applies to
+        returns (either outcome is None, or both player/value are None)
+            value - value of leaf state or None
+            player - player the value applies to or None
             outcome - player index of the winner or None
         '''
         action, child = tree.select()
-        if child is None:
+        if child is None:  # Base case: this is a leaf action
             prior, value = self.model(state, player)
             tree.leaf(action, prior)
+            tree.backup(action, value)
             return value, player, None
         state, next_player, outcome = self.step(state, player, action)
-        if outcome is not None:
+        if outcome is not None:  # Base case: game is over after this action
             value = 1 if outcome == player else -1
             tree.backup(action, value)
-            return value, player, outcome
+            return None, None, outcome
+        # Recurse through the tree until base case, then unrolls back to here
         value, v_player, outcome = self.simulate(state, next_player, child)
-        if v_player == player:
+        if outcome is not None:  # Game is over, everyone backup
+            value = 1 if outcome == player else -1
             tree.backup(action, value)
-        return value, v_player, outcome
+            return None, None, outcome
+        if v_player == player:  # Game is not over, only one player backup
+            tree.backup(action, value)
+        return value, v_player, None
 
     def search(self, state, player):
         ''' MCTS to generate move probabilities for a state '''
         prior, _ = self.model(state, player)
-        tree = Tree(prior)
-        for _ in range(SIMS_PER_SEARCH):
+        tree = Tree(prior, self.c_puct)
+        for _ in range(self.sims_per_search):
             self.simulate(state, player, tree)
-        pi = np.power(tree.N, 1 / TAU)
-        probs = pi / np.sum(pi)
-        return probs
+        pi = np.power(tree.N, 1 / self.tau)
+        valid = self._game.valid(state, player)
+        pv = pi * valid
+        if np.sum(pv) < 1e-6:  # Somehow got only invalid moves?
+            import ipdb; ipdb.set_trace()  # noqa
+        probs = pv / np.sum(pv)
+        return probs, tree
 
     def sample(self, state, player):
         ''' Return a sampled action from a search '''
-        probs = self.search(state, player)
+        probs, _ = self.search(state, player)
         return np.random.choice(range(len(probs)), p=probs)

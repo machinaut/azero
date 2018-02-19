@@ -23,7 +23,10 @@ virtual loss:
 - Was the virtual loss non-constant?
 
 PUCT:
-- What were the c_PUCT coefficients chosen?  How were they chosen?
+- How was c_PUCT chosen?
+
+Noise:
+- Why use Dirichlet noise?  Why not other (simple) kinds?
 
 ## TODO
 
@@ -44,6 +47,22 @@ Games:
 
 Utils:
 - Add tests
+
+Hypers:
+- c_PUCT - constant determining level of exploration in tree search
+    - (AlphaGo had 5.0, AlphaGoZero and AlphaZero unlisted)
+    - Benchmark tree-search by itself and see how this affects results
+    - Try to keep this constant -- annealing this seems tricky
+- tau - temperature controlling exploration in game
+    - AlphaGoZero had 1.0 for first 30 moves then "infinitesimal" -> 0
+    - See how this affects play strength given fixed search results
+    - See how this affects training (regularizes?)
+    - Anneal this over training? 1.0 -> 0.0
+- simulation games per search
+    - Varied by game in Alpha{Go}Zero
+    - Possibly intelligently tune over training?
+    - Would be good to measure how much more information each one gives us
+
 
 ## Old TODO
 
