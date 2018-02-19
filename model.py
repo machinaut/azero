@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
+from util import get_activation
 
 
 class Model:
@@ -40,6 +41,7 @@ class Model:
 
 
 class Uniform(Model):
+    ''' Maximum entropy (uniform distribution) '''
     def _model(self, obs):
         # Fun little hack, sum the observation, then multiply by zero
         # This allows NaN propagation, which is a great way of testing models
@@ -49,11 +51,12 @@ class Uniform(Model):
 
 
 class Linear(Model):
-    def __init__(self, n_action, n_view, seed=None, weight_scale=0.01):
+    ''' Simple linear model '''
+    def __init__(self, n_action, n_view, seed=None, scale=0.01):
         super().__init__(n_action, n_view)
         rs = np.random.RandomState(seed)
-        self.W = rs.randn(self.n_obs, self.n_act) * weight_scale
-        self.V = rs.randn(self.n_obs) * weight_scale
+        self.W = rs.randn(self.n_obs, self.n_act) * scale
+        self.V = rs.randn(self.n_obs) * scale
 
     def _model(self, obs):
         logits = obs.dot(self.W)
@@ -81,4 +84,20 @@ class Memorize(Model):
                 self.data[state] = logits, outcome * player
 
 
-models = [Uniform, Linear, Memorize]
+class Perceptron(Model):
+    ''' Linear + nonlinearity '''
+    def __init__(self, n_action, n_view, seed=None, scale=0.01,
+                 activation='relu'):
+        super().__init__(n_action, n_view)
+        rs = np.random.RandomState(seed)
+        self.W = rs.randn(self.n_obs, self.n_act) * scale
+        self.V = rs.randn(self.n_obs) * scale
+        self.activation = get_activation(activation)
+
+    def _model(self, obs):
+        logits = self.activation(obs.dot(self.W))
+        value = obs.dot(self.V)
+        return logits, value
+
+
+models = [Uniform, Linear, Memorize, Perceptron]
