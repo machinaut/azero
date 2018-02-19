@@ -11,6 +11,7 @@ def play(game):
     state, player, outcome = game.start()
     while outcome is None:
         print('State:', game.human(state))
+        print('View:', game.view(state, player))
         print('Player:', player)
         valid = game.valid(state, player)
         print('Valid:', valid)

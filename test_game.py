@@ -17,35 +17,48 @@ class TestGames(unittest.TestCase):
             for _ in range(N):
                 state, player, outcome = game.start()
                 while outcome is None:
-                    # Verify incorrect length state asserts
+                    # Verify incorrect length state asserts valid()
                     if len(state) > 1:
                         with self.assertRaises(AssertionError):
                             game.valid(state[:-1], player)
                     with self.assertRaises(AssertionError):
                         game.valid(state + (0,), player)
-                    # Verify incorrect player asserts
+                    # Verify incorrect length state asserts view()
+                    if len(state) > 1:
+                        with self.assertRaises(AssertionError):
+                            game.view(state[:-1], player)
+                    with self.assertRaises(AssertionError):
+                        game.view(state + (0,), player)
+                    # Verify incorrect player asserts valid()
                     with self.assertRaises(AssertionError):
                         game.valid(state, player + 1)
                     with self.assertRaises(AssertionError):
                         game.valid(state, player - 1)
+                    # Verify incorrect player asserts view()
+                    with self.assertRaises(AssertionError):
+                        game.view(state, player + 1)
+                    with self.assertRaises(AssertionError):
+                        game.view(state, player - 1)
+                    # Get a view for the current player
+                    game.view(state, player)
                     # Get a valid mask for the current state
                     valid = game.valid(state, player)
                     # Check that at least one action is valid
                     self.assertGreater(sum(valid), 0)
                     # Draw a random action, maybe invalid
-                    action = random.randrange(len(valid))
-                    # Verify that incorrect length state asserts
+                    action = random.randrange(game.n_action)
+                    # Verify that incorrect length state asserts step()
                     if len(state) > 1:
                         with self.assertRaises(AssertionError):
                             game.step(state[:-1], player, action)
                     with self.assertRaises(AssertionError):
                         game.step(state + (0,), player, action)
-                    # Verify that out-of-range action asserts
+                    # Verify that out-of-range action asserts step()
                     with self.assertRaises(AssertionError):
                         game.step(state, player, -1)
                     with self.assertRaises(AssertionError):
                         game.step(state, player, len(valid))
-                    # Verify that improper player asserts
+                    # Verify that improper player asserts step()
                     with self.assertRaises(AssertionError):
                         game.step(state, player + 1, action)
                     with self.assertRaises(AssertionError):
@@ -59,10 +72,11 @@ class TestGames(unittest.TestCase):
                 # End of game checks
                 self.assertEqual(player, -1)
                 # Final state should be invalid state
-                with self.assertRaises(AssertionError):
-                    game.valid(state, 0)
-                with self.assertRaises(AssertionError):
-                    game.step(state, 0, 0)
+                if game.n_state > 0:
+                    with self.assertRaises(AssertionError):
+                        game.valid(state, 0)
+                    with self.assertRaises(AssertionError):
+                        game.step(state, 0, 0)
 
     def check_trajectory(self, game, traj, out):
         state, player, outcome = game.start()
