@@ -7,7 +7,7 @@ from game import games, Narrow
 from model import models, Uniform
 from azero import AlphaZero
 
-N = 10
+N = 100
 
 
 class TestAlphaZero(unittest.TestCase):

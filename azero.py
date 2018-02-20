@@ -90,11 +90,7 @@ class AlphaZero:
         for _ in range(self.sims_per_search):
             self.simulate(state, player, tree)
         pi = np.power(tree.N, 1 / self.tau)
-        valid = self._game.valid(state, player)
-        pv = pi * valid
-        if np.sum(pv) < 1e-6:  # Somehow got only invalid moves?
-            import ipdb; ipdb.set_trace()  # noqa
-        probs = pv / np.sum(pv)
+        probs = pi / np.sum(pi)
         return probs, tree
 
     def sample(self, state, player):
