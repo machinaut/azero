@@ -16,7 +16,7 @@ class TestModel(unittest.TestCase):
         for model_cls, game_cls in product(models, games):
             game = game_cls()
             for _ in range(N):
-                model = model_cls(game.n_action, game.n_view)
+                model = model_cls(game.n_action, game.n_view, game.n_player)
                 state, player, outcome = game.start()
                 while outcome is None:
                     view = game.view(state, player)
@@ -32,7 +32,7 @@ class TestModel(unittest.TestCase):
             if game.n_view == 0:
                 continue
             for _ in range(N):
-                model = model_cls(game.n_action, game.n_view)
+                model = model_cls(game.n_action, game.n_view, game.n_player)
                 state, player, outcome = game.start()
                 while outcome is None:
                     view = game.view(state, player)
