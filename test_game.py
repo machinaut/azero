@@ -70,13 +70,8 @@ class TestGames(unittest.TestCase):
                         with self.assertRaises(AssertionError):
                             game.step(state, player, action)
                 # End of game checks
-                self.assertEqual(player, -1)
-                # Final state should be invalid state
-                if game.n_state > 0:
-                    with self.assertRaises(AssertionError):
-                        game.valid(state, 0)
-                    with self.assertRaises(AssertionError):
-                        game.step(state, 0, 0)
+                self.assertIsNone(player)
+                self.assertIsNone(state)
 
     def check_trajectory(self, game, traj, out):
         state, player, outcome = game.start()
@@ -87,57 +82,57 @@ class TestGames(unittest.TestCase):
         self.assertEqual(outcome, out)
 
     def test_trajectories(self):
-        self.check_trajectory(Null(), (), -1)
-        self.check_trajectory(Binary(), (0,), -1)
-        self.check_trajectory(Binary(), (1,), 0)
+        self.check_trajectory(Null(), (), (0,))
+        self.check_trajectory(Binary(), (0,), (-1,))
+        self.check_trajectory(Binary(), (1,), (1,))
         with self.assertRaises(AssertionError):
-            self.check_trajectory(Binary(), (2,), 0)
-        self.check_trajectory(Flip(0), (0,), -1)
-        self.check_trajectory(Flip(0), (1,), 0)
-        self.check_trajectory(Flip(1), (0,), 0)
+            self.check_trajectory(Binary(), (2,), None)
+        self.check_trajectory(Flip(0), (0,), (-1,))
+        self.check_trajectory(Flip(0), (1,), (1,))
+        self.check_trajectory(Flip(1), (0,), (1,))
         with self.assertRaises(AssertionError):
-            self.check_trajectory(Flip(0), (2,), 0)
-        self.check_trajectory(Count(), (0, 1, 2), 0)
-        self.check_trajectory(Count(), (0, 1, 1), -1)
-        self.check_trajectory(Count(), (0, 1, 0), -1)
-        self.check_trajectory(Count(), (1,), -1)
-        self.check_trajectory(Count(), (2,), -1)
+            self.check_trajectory(Flip(0), (2,), None)
+        self.check_trajectory(Count(), (0, 1, 2), (1,))
+        self.check_trajectory(Count(), (0, 1, 1), (-1,))
+        self.check_trajectory(Count(), (0, 1, 0), (-1,))
+        self.check_trajectory(Count(), (1,), (-1,))
+        self.check_trajectory(Count(), (2,), (-1,))
         with self.assertRaises(AssertionError):
-            self.check_trajectory(Count(), (3,), -1)
-        self.check_trajectory(Narrow(), (0,), -1)
-        self.check_trajectory(Narrow(), (1, 0), -1)
-        self.check_trajectory(Narrow(), (2, 1, 0), -1)
-        self.check_trajectory(Narrow(), (2, 0), -1)
+            self.check_trajectory(Count(), (3,), None)
+        self.check_trajectory(Narrow(), (0,), (-1,))
+        self.check_trajectory(Narrow(), (1, 0), (-1,))
+        self.check_trajectory(Narrow(), (2, 1, 0), (-1,))
+        self.check_trajectory(Narrow(), (2, 0), (-1,))
         with self.assertRaises(AssertionError):
-            self.check_trajectory(Narrow(), (1, 1), -1)
+            self.check_trajectory(Narrow(), (1, 1), None)
         with self.assertRaises(AssertionError):
-            self.check_trajectory(Narrow(), (2, 2), -1)
+            self.check_trajectory(Narrow(), (2, 2), None)
         with self.assertRaises(AssertionError):
-            self.check_trajectory(Narrow(), (3,), -1)
-        self.check_trajectory(Matching(), (0, 0), 0)
-        self.check_trajectory(Matching(), (0, 1), 1)
-        self.check_trajectory(Matching(), (1, 0), 1)
-        self.check_trajectory(Matching(), (1, 1), 0)
+            self.check_trajectory(Narrow(), (3,), None)
+        self.check_trajectory(Matching(), (0, 0), (-1, 1))
+        self.check_trajectory(Matching(), (0, 1), (1, -1))
+        self.check_trajectory(Matching(), (1, 0), (1, -1))
+        self.check_trajectory(Matching(), (1, 1), (-1, 1))
         with self.assertRaises(AssertionError):
-            self.check_trajectory(Matching(), (2,), -1)
-        self.check_trajectory(Roshambo(), (0, 0), -1)
-        self.check_trajectory(Roshambo(), (0, 1), 0)
-        self.check_trajectory(Roshambo(), (0, 2), 1)
-        self.check_trajectory(Roshambo(), (1, 0), 1)
-        self.check_trajectory(Roshambo(), (1, 1), -1)
-        self.check_trajectory(Roshambo(), (1, 2), 0)
-        self.check_trajectory(Roshambo(), (2, 0), 0)
-        self.check_trajectory(Roshambo(), (2, 1), 1)
-        self.check_trajectory(Roshambo(), (2, 2), -1)
+            self.check_trajectory(Matching(), (2,), None)
+        self.check_trajectory(Roshambo(), (0, 0), (-1, -1))
+        self.check_trajectory(Roshambo(), (0, 1), (1, -1))
+        self.check_trajectory(Roshambo(), (0, 2), (-1, 1))
+        self.check_trajectory(Roshambo(), (1, 0), (-1, 1))
+        self.check_trajectory(Roshambo(), (1, 1), (-1, -1))
+        self.check_trajectory(Roshambo(), (1, 2), (1, -1))
+        self.check_trajectory(Roshambo(), (2, 0), (1, -1))
+        self.check_trajectory(Roshambo(), (2, 1), (-1, 1))
+        self.check_trajectory(Roshambo(), (2, 2), (-1, -1))
         with self.assertRaises(AssertionError):
-            self.check_trajectory(Roshambo(), (3,), -1)
-        self.check_trajectory(Modulo(), (0, 0, 0), 0)
-        self.check_trajectory(Modulo(), (0, 1, 0), 1)
-        self.check_trajectory(Modulo(), (1, 0, 1), 2)
-        self.check_trajectory(Modulo(), (2, 2, 2), 0)
-        self.check_trajectory(Modulo(), (2, 1, 1), 1)
+            self.check_trajectory(Roshambo(), (3,), None)
+        self.check_trajectory(Modulo(), (0, 0, 0), (1, -1, -1))
+        self.check_trajectory(Modulo(), (0, 1, 0), (-1, 1, -1))
+        self.check_trajectory(Modulo(), (1, 0, 1), (-1, -1, 1))
+        self.check_trajectory(Modulo(), (2, 2, 2), (1, -1, -1))
+        self.check_trajectory(Modulo(), (2, 1, 1), (-1, 1, -1))
         with self.assertRaises(AssertionError):
-            self.check_trajectory(Modulo(), (3,), -1)
+            self.check_trajectory(Modulo(), (3,), None)
 
 
 if __name__ == '__main__':

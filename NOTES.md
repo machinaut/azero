@@ -72,7 +72,7 @@ Hypers:
     - Notably *not* using crossentropy, because not interpreting value as prob
 - Exploration noise
     - AlphaZero added Dirichlet noise, maybe try implementing that first
-
+- Value bias - verify adding a constant to all values doesn't change results
 
 ## Old TODO
 
