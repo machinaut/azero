@@ -37,15 +37,16 @@ Azero:
 - Tune how much to update based on an outcome farther down the tree
 - Re-use tree between moves
 - Do something useful with first value from evaluating tree at root node
+- Find some way to incorporate the other players values into the MCTS selection
 
 Models:
-- Models should return n_player length vector of values
-    - these will be updated to predict expected sum of future rewards ~ outcome
+- Add update and tests
 - Add RBF network
 - Add MLP network
 
 Games:
 - Unit test that there's no mutual information between (valid) and (state|view)
+- Unit test that player is inferable from state (so full mutual information)
 - Add 3-player tic tac toe game
 
 Utils:

@@ -14,7 +14,7 @@ class TestAlphaZero(unittest.TestCase):
     def test_sample(self):
         for game_cls, model_cls in product(games, models):
             game = game_cls()
-            model = model_cls(game.n_action, game.n_view)
+            model = model_cls(game.n_action, game.n_view, game.n_player)
             azero = AlphaZero(game, model, sims_per_search=1)
             for _ in range(N):
                 state, player, outcome = game.start()
@@ -27,7 +27,7 @@ class TestAlphaZero(unittest.TestCase):
 
     def test_search(self):
         game = Narrow()
-        model = Uniform(game.n_action, game.n_view)
+        model = Uniform(game.n_action, game.n_view, game.n_player)
         azero = AlphaZero(game, model)
         state, player, _ = game.start()
         probs, _ = azero.search(state, player)

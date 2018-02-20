@@ -27,9 +27,9 @@ class Tree:
     def values(self):  # Mean action value + UCB == Q + U
         return self.Q + self.U
 
-    def select(self):
+    def select(self, valid):
         ''' Select given valid moves and return action, child '''
-        action = np.argmax(self.values)
+        action = np.argmax(np.where(valid, self.values, -np.inf))
         return action, self.children.get(action, None)
 
     def backup(self, action, value):
@@ -53,12 +53,6 @@ class AlphaZero:
         self.tau = tau
         self.sims_per_search = sims_per_search
 
-    def step(self, state, player, action):
-        ''' Wrap game action to check for valid moves '''
-        if not self._game.valid(state, player)[action]:
-            return state, player, -1  # Kinda hack but it works
-        return self._game.step(state, player, action)
-
     def model(self, state, player):
         ''' Wrap the model to give the proper view and mask actions '''
         valid = self._game.valid(state, player)
@@ -74,31 +68,20 @@ class AlphaZero:
             state - game state tuple
             player - current player index
             tree - MCTS tree rooted at current state
-        returns (either outcome is None, or both player/value are None)
-            value - value of leaf state or None
-            player - player the value applies to or None
-            outcome - player index of the winner or None
+        returns
+            values - player-length list of values
         '''
-        action, child = tree.select()
-        if child is None:  # Base case: this is a leaf action
-            prior, value = self.model(state, player)
+        valid = self._game.valid(state, player)
+        action, child = tree.select(valid)
+        if child is None:
+            prior, values = self.model(state, player)
             tree.leaf(action, prior)
-            tree.backup(action, value)
-            return value, player, None
-        state, next_player, outcome = self.step(state, player, action)
-        if outcome is not None:  # Base case: game is over after this action
-            value = 1 if outcome == player else -1
-            tree.backup(action, value)
-            return None, None, outcome
-        # Recurse through the tree until base case, then unrolls back to here
-        value, v_player, outcome = self.simulate(state, next_player, child)
-        if outcome is not None:  # Game is over, everyone backup
-            value = 1 if outcome == player else -1
-            tree.backup(action, value)
-            return None, None, outcome
-        if v_player == player:  # Game is not over, only one player backup
-            tree.backup(action, value)
-        return value, v_player, None
+        else:
+            state, next_player, values = self._game.step(state, player, action)
+            if values is None:
+                values = self.simulate(state, next_player, child)
+        tree.backup(action, values[player])
+        return values
 
     def search(self, state, player):
         ''' MCTS to generate move probabilities for a state '''
