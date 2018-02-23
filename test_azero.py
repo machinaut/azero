@@ -6,12 +6,13 @@ from itertools import product
 from game import games, Narrow
 from model import models, Uniform
 from azero import AlphaZero
+from util import sample_probs
 
 N = 100
 
 
 class TestAlphaZero(unittest.TestCase):
-    def test_sample(self):
+    def test_play(self):
         for game_cls, model_cls in product(games, models):
             game = game_cls()
             model = model_cls(game.n_action, game.n_view, game.n_player)
@@ -19,7 +20,8 @@ class TestAlphaZero(unittest.TestCase):
             for _ in range(N):
                 state, player, outcome = game.start()
                 while outcome is None:
-                    action = azero.sample(state, player)
+                    probs, _ = azero.search(state, player)
+                    action = sample_probs(probs)
                     state, player, outcome = game.step(state, player, action)
 
     def check_rank(self, prob, rank):

@@ -92,8 +92,3 @@ class AlphaZero:
         pi = np.power(tree.N, 1 / self.tau)
         probs = pi / np.sum(pi)
         return probs, tree
-
-    def sample(self, state, player):
-        ''' Return a sampled action from a search '''
-        probs, _ = self.search(state, player)
-        return np.random.choice(range(len(probs)), p=probs)

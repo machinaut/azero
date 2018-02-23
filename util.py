@@ -15,6 +15,10 @@ def softmax(x, mask=1):
     return e / s
 
 
-def sample(logits, valid=1):
+def sample_logits(logits, valid=1):
     probs = softmax(logits, valid)
+    return np.random.choice(range(len(probs)), p=probs)
+
+
+def sample_probs(probs):
     return np.random.choice(range(len(probs)), p=probs)

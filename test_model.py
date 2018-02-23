@@ -6,7 +6,7 @@ import numpy as np
 from itertools import product
 from model import models
 from game import games
-from util import view2obs, sample
+from util import view2obs, sample_logits
 
 N = 10
 
@@ -23,7 +23,7 @@ class TestModel(unittest.TestCase):
                     obs = view2obs(view, player)
                     valid = game.valid(state, player)
                     logits, _ = model.model(obs)
-                    action = sample(logits, valid)
+                    action = sample_logits(logits, valid)
                     state, player, outcome = game.step(state, player, action)
 
     def test_nan_propagation(self):
@@ -44,7 +44,7 @@ class TestModel(unittest.TestCase):
                     assert np.isnan(bad_logits).all()
                     valid = game.valid(state, player)
                     logits, _ = model.model(obs)
-                    action = sample(logits, valid)
+                    action = sample_logits(logits, valid)
                     state, player, outcome = game.step(state, player, action)
 
 
