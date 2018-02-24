@@ -40,7 +40,7 @@ class TestModel(unittest.TestCase):
                     bad_obs = obs.copy()
                     bad_obs[random.randrange(len(bad_obs))] = np.nan
                     bad_logits, bad_value = model.model(bad_obs)
-                    assert np.isnan(bad_value)
+                    assert np.isnan(bad_value).all()
                     assert np.isnan(bad_logits).all()
                     valid = game.valid(state, player)
                     logits, _ = model.model(obs)
