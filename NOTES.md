@@ -45,7 +45,7 @@ Models:
 - Add MLP network
 
 Games:
-- Add 3-player tic tac toe game
+- make more TODO items
 
 Utils:
 - Add tests
