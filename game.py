@@ -340,15 +340,15 @@ class Connect3(Game):
         return '\n'.join(buffer)
         
 
-class MNKP(Game):
+class MNOP(Game):
     ''' Generalized tic-tac-toe '''
-    def __init__(self, m=3, n=3, k=3, p=2, seed=None):
+    def __init__(self, m=3, n=3, o=3, p=2, seed=None):
         super().__init__(seed=seed)
-        assert m >= k and n >= k
+        assert m >= o and n >= o  # Otherwise game is unwinnable
         self.m = m  # board width
         self.n = n  # board height
-        self.k = k  # goal
-        self.n_player = p
+        self.o = o  # goal
+        self.n_player = self.p = p
         self.n_action = self.n_state = self.n_view = m * n
 
     def _start(self):
@@ -356,24 +356,24 @@ class MNKP(Game):
 
     def _step(self, state, player, action):
         assert state[action] == -1
-        win = self.n_player - 1
-        out = tuple(win if i == player else -1 for i in range(self.n_player))
+        m, n, o, p = self.m, self.n, self.o, self.p
+        outcome = tuple(p - 1 if i == player else -1 for i in range(p))
         state = state[:action] + (player,) + state[action + 1:]
-        s = tuple(zip_longest(*([iter(state)] * self.m)))
-        for i in range(self.m):
-            for j in range(self.n):
-                if i + self.k <= self.m:
-                    if all(s[i + k][j] == player for k in range(self.k)):
-                        return None, None, out
-                if j + self.k <= self.n:
-                    if all(s[i][j + k] == player for k in range(self.k)):
-                        return None, None, out
-                if i + self.k <= self.m and j + self.k <= self.n:
-                    if all(s[i + k][j + k] == player for k in range(self.k)):
-                        return None, None, out
+        s = tuple(zip_longest(*([iter(state)] * m)))
+        for i, j in product(range(m - o + 1), range(n)):
+            if all(s[i + k][j] == player for k in range(o)):
+                return None, None, outcome
+        for i, j in product(range(m), range(n - o + 1)):
+            if all(s[i][j + k] == player for k in range(o)):
+                return None, None, outcome
+        for i, j in product(range(m - o + 1), range(n - o + 1)):
+            if all(s[i + k][j + k] == player for k in range(o)):
+                return None, None, outcome
+            if all(s[i + k][j + o - k - 1] == player for k in range(o)):
+                return None, None, outcome
         if state.count(-1) == 0:
-            return None, None, (0,) * self.n_player
-        return state, (player + 1) % self.n_player, None
+            return None, None, (0,) * p
+        return state, (player + 1) % p, None
 
     def _valid(self, state, player):
         return tuple(s == -1 for s in state)
@@ -386,7 +386,7 @@ class MNKP(Game):
         return '\n'.join(' '.join('%+2d' % s for s in row) for row in board)
 
         
-games = [Null, Binary, Flip, Count, Narrow, Matching, Roshambo, Modulo, Connect3, MNKP]
+games = [Null, Binary, Flip, Count, Narrow, Matching, Roshambo, Modulo, Connect3, MNOP]
 
 if __name__ == '__main__':
     from play import main  # noqa
