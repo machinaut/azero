@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import random
-from itertools import zip_longest
+from itertools import zip_longest, product
 
 
 class Game:
@@ -297,17 +297,18 @@ class MNKP(Game):
         out = tuple(win if i == player else -1 for i in range(self.n_player))
         state = state[:action] + (player,) + state[action + 1:]
         s = tuple(zip_longest(*([iter(state)] * self.m)))
-        for i in range(self.m):
-            for j in range(self.n):
-                if i + self.k <= self.m:
-                    if all(s[i + k][j] == player for k in range(self.k)):
-                        return None, None, out
-                if j + self.k <= self.n:
-                    if all(s[i][j + k] == player for k in range(self.k)):
-                        return None, None, out
-                if i + self.k <= self.m and j + self.k <= self.n:
-                    if all(s[i + k][j + k] == player for k in range(self.k)):
-                        return None, None, out
+        for i, j in product(range(self.m - self.k + 1), range(self.n)):
+                if all(s[i + k][j] == player for k in range(self.k)):
+                    return None, None, out
+        for i, j in product(range(self.m), range(self.n - self.k + 1)):
+            if all(s[i][j + k] == player for k in range(self.k)):
+                return None, None, out
+        for i, j in product(range(self.m - self.k + 1),
+                            range(self.n - self.k + 1)):
+            if all(s[i + k][j + k] == player for k in range(self.k)):
+                return None, None, out
+            if all(s[i + k][j + self.k - k - 1] == player for k in range(self.k)):
+                return None, None, out
         if state.count(-1) == 0:
             return None, None, (0,) * self.n_player
         return state, (player + 1) % self.n_player, None
