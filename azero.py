@@ -119,3 +119,10 @@ class AlphaZero:
             trajectory.append((obs, logits))
             state, player, outcome = self._game.step(state, player, action)
         return trajectory, outcome
+
+    def play_multi(self, n=10):
+        '''
+        Play multiple whole games, return a list of game results.
+        See play() for result of a single game.
+        '''
+        return [self.play() for _ in range(n)]
