@@ -30,8 +30,9 @@ class Model:
 
     def update(self, games):
         '''
-        Update model given list of games,
-        where each game is a list of (state, player, logits)
+        Update model given a list of games.  Each game is a pair of:
+            trajectory - list of (obs, logits)
+            outcome - total reward per player
         '''
         self.n_updates += 1
         self._update(games)

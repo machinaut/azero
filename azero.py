@@ -45,12 +45,14 @@ class AlphaZero:
     def __init__(self, game, model,
                  c_puct=1.0,
                  tau=1.0,
+                 eps=1e-6,
                  sims_per_search=100):
         ''' Train a model to play a game with the AlphaZero algorithm '''
         self._game = game
         self._model = model
         self.c_puct = c_puct
         self.tau = tau
+        self.eps = eps
         self.sims_per_search = sims_per_search
 
     @classmethod
@@ -104,7 +106,7 @@ class AlphaZero:
         '''
         Play a whole game, and get states on which to update
         Return tuple of:
-            trajectory - (state, player, probs, action) for each step
+            trajectory - (obs, logits) for each step
             outcome - final reward for each player
         '''
         trajectory = []
@@ -112,6 +114,8 @@ class AlphaZero:
         while outcome is None:
             probs, _ = self.search(state, player)
             action = sample_probs(probs)
-            trajectory.append((state, player, probs, action))
+            obs = view2obs(self._game.view(state, player), player)
+            logits = -np.log((1 / (probs + self.eps)) - 1)
+            trajectory.append((obs, logits))
             state, player, outcome = self._game.step(state, player, action)
         return trajectory, outcome
