@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
-from util import view2obs, softmax
+from util import view2obs, softmax, sample_probs
 
 
 class Tree:
@@ -53,6 +53,13 @@ class AlphaZero:
         self.tau = tau
         self.sims_per_search = sims_per_search
 
+    @classmethod
+    def make(cls, game_cls, model_cls, *args, **kwargs):
+        ''' Convenience method to build from game and model classes '''
+        game = game_cls()
+        model = model_cls(game.n_action, game.n_view, game.n_player)
+        return cls(game=game, model=model, *args, **kwargs)
+
     def model(self, state, player):
         ''' Wrap the model to give the proper view and mask actions '''
         valid = self._game.valid(state, player)
@@ -92,3 +99,19 @@ class AlphaZero:
         pi = np.power(tree.N, 1 / self.tau)
         probs = pi / np.sum(pi)
         return probs, tree
+
+    def play(self):
+        '''
+        Play a whole game, and get states on which to update
+        Return tuple of:
+            trajectory - (state, player, probs, action) for each step
+            outcome - final reward for each player
+        '''
+        trajectory = []
+        state, player, outcome = self._game.start()
+        while outcome is None:
+            probs, _ = self.search(state, player)
+            action = sample_probs(probs)
+            trajectory.append((state, player, probs, action))
+            state, player, outcome = self._game.step(state, player, action)
+        return trajectory, outcome
