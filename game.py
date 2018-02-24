@@ -389,7 +389,7 @@ class MNOP(Game):
 
 
 games = [Null, Binary, Flip, Count, Narrow,
-         Matching, Roshambo, Modulo, Connect3, MNOP]
+         Matching, Roshambo, Modulo, MNOP]
 
 if __name__ == '__main__':
     from play import main  # noqa

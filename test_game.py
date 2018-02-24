@@ -141,6 +141,7 @@ class TestGames(unittest.TestCase):
         self.check_trajectory(MNOP(), (0, 1, 3, 2, 6), (1, -1))
         self.check_trajectory(MNOP(), (2, 1, 4, 0, 6), (1, -1))
         self.check_trajectory(MNOP(), (3, 0, 4, 1, 6, 2), (-1, 1))
+        self.check_trajectory(MNOP(2, 2, 2), (0, 1, 2), (1, -1))
         with self.assertRaises(AssertionError):
             self.check_trajectory(MNOP(), (0, 0), None)
         with self.assertRaises(AssertionError):
