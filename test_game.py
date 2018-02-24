@@ -155,20 +155,31 @@ class TestGames(unittest.TestCase):
         for x, y, z in product(X.keys(), Y.keys(), Z.keys()):
             self.assertEqual(XYZ[(x, y, z)] * Z[z], XZ[(x, z)] * YZ[(y, z)])
 
+    def check_dependence(self, data):
+        ''' Ensure that Y depends entirely on X '''
+        X = dict()
+        for x, y in data:
+            if x not in X:
+                X[x] = y
+            self.assertEqual(X[x], y)
+
     def test_valid_independence(self):
         ''' Ensure valid doesn't give extra information about state '''
         for game_cls in games:
             game = game_cls()
-            data = []
+            state_valid_view = []
+            state_player = []
             for _ in range(N):
                 state, player, outcome = game.start()
                 while outcome is None:
                     valid = game.valid(state, player)
                     view = game.view(state, player)
-                    data.append((state, valid, view))
+                    state_valid_view.append((state, valid, view))
+                    state_player.append((state, player))
                     action = sample_logits((0,) * len(valid), valid)
                     state, player, outcome = game.step(state, player, action)
-            self.check_conditional_independence(data)
+            self.check_conditional_independence(state_valid_view)
+            self.check_dependence(state_player)
 
 
 if __name__ == '__main__':
