@@ -105,6 +105,7 @@ class Game:
 
 class Null(Game):
     ''' Null game, always lose '''
+
     def _start(self):
         return None, None, (0,)
 
@@ -284,49 +285,48 @@ class Connect3(Game):
     n_action = 5
     n_state = 20
     n_player = 2
-    poss = [([0, 0, 0],[0, -1, -2]),
-            ([0, -1, -2],[0, -1, -2]),
-            ([1, 0, -1],[1, 0, -1]),
-            ([2, 1, 0],[2, 1, 0]),
-            ([0, 1, 2],[0, -1, -2]),
-            ([-1, 0, 1],[1, 0, -1]),
-            ([-2, -1, 0],[2, 1, 0]),
-            ([-2, -1, 0],[0, 0, 0,]),
-            ([-1, 0, 1],[0, 0, 0,]),
-            ([0, 1, 2],[0, 0, 0,])]
+    poss = [([0, 0, 0], [0, -1, -2]),
+            ([0, -1, -2], [0, -1, -2]),
+            ([1, 0, -1], [1, 0, -1]),
+            ([2, 1, 0], [2, 1, 0]),
+            ([0, 1, 2], [0, -1, -2]),
+            ([-1, 0, 1], [1, 0, -1]),
+            ([-2, -1, 0], [2, 1, 0]),
+            ([-2, -1, 0], [0, 0, 0, ]),
+            ([-1, 0, 1], [0, 0, 0, ]),
+            ([0, 1, 2], [0, 0, 0, ])]
 
     def _start(self):
-        return np.ones((5,4),dtype=np.int8)*-1, 0, None
+        return np.ones((5, 4), dtype=np.int8) * -1, 0, None
 
     def _step(self, state, player, action):
-        assert state[action,-1] == -1
-        new_piece = np.where(state[action]==-1)[0][0]
-        state[action,new_piece] = player
-        #Check for victory
-        #Because I don't immediately see a simple way to check the whole board,
-        #I'm going to just check the ten possible wins that involve the new piece.
-        for poss in win_poss:
+        assert state[action, -1] == -1
+        new_piece = np.where(state[action] == -1)[0][0]
+        state[action, new_piece] = player
+        # Check for victory
+        # Because I don't immediately see a simple way to check the whole board,
+        # I'm going to just check the ten possible wins that involve the new piece.
+        for poss in self.poss:
             if self._win(state, player, action, new_piece, poss[0], poss[1]):
                 return state, None, player
-        #Check for tie
-        if not np.any(state[:,-1]==-1):
+        # Check for tie
+        if not np.any(state[:, -1] == -1):
             return state, None, -1
-        #Game continues
-        return state, 1-player, None
-    
+        # Game continues
+        return state, 1 - player, None
+
     def _win(self, state, player, action, new_piece, x_set, y_set):
-        win = True
         for piece in range(3):
-            if not 0 <= action+x_set < state.shape[0]:
+            if not 0 <= action + x_set < state.shape[0]:
                 return False
-            if not 0 <= new_piece+y_set < state.shape[1]:
+            if not 0 <= new_piece + y_set < state.shape[1]:
                 return False
-            if state[action+x_set,new_piece+y_set]:
+            if state[action + x_set, new_piece + y_set]:
                 return False
         return True
 
     def _valid(self, state, player):
-        return state[:,-1]==-1
+        return state[:, -1] == -1
 
     def _view(self, state, player):
         return ()
@@ -335,13 +335,15 @@ class Connect3(Game):
         pass
 
     def human(self, state):
-        buffer = [' '.join('%+2d' % s for s in row) for row in state.transpose()]
+        buffer = [' '.join('%+2d' % s for s in row)
+                  for row in state.transpose()]
         buffer.reverse()
         return '\n'.join(buffer)
-        
+
 
 class MNOP(Game):
     ''' Generalized tic-tac-toe '''
+
     def __init__(self, m=3, n=3, o=3, p=2, seed=None):
         super().__init__(seed=seed)
         assert m >= o and n >= o  # Otherwise game is unwinnable
@@ -385,8 +387,9 @@ class MNOP(Game):
         board = tuple(zip_longest(*([iter(state)] * self.m)))
         return '\n'.join(' '.join('%+2d' % s for s in row) for row in board)
 
-        
-games = [Null, Binary, Flip, Count, Narrow, Matching, Roshambo, Modulo, Connect3, MNOP]
+
+games = [Null, Binary, Flip, Count, Narrow,
+         Matching, Roshambo, Modulo, Connect3, MNOP]
 
 if __name__ == '__main__':
     from play import main  # noqa
