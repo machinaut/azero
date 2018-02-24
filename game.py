@@ -2,6 +2,7 @@
 
 import random
 import numpy as np
+from itertools import zip_longest, product
 
 
 class Game:
@@ -295,7 +296,7 @@ class Connect3(Game):
             ([0, 1, 2],[0, 0, 0,])]
 
     def _start(self):
-        return np.ones((5,4),dtype=numpy.int8)*-1, 0, None
+        return np.ones((5,4),dtype=np.int8)*-1, 0, None
 
     def _step(self, state, player, action):
         assert state[action,-1] == -1
@@ -331,12 +332,61 @@ class Connect3(Game):
         return ()
 
     def _check(self, state, player):
-        total, current = state
-        assert 0 <= total < 6
-        assert current == player
+        pass
 
-games = [Null, Binary, Flip, Count, Narrow, Matching, Roshambo, Modulo, Connect3]
+    def human(self, state):
+        buffer = [' '.join('%+2d' % s for s in row) for row in state.transpose()]
+        buffer.reverse()
+        return '\n'.join(buffer)
+        
 
+class MNKP(Game):
+    ''' Generalized tic-tac-toe '''
+    def __init__(self, m=3, n=3, k=3, p=2, seed=None):
+        super().__init__(seed=seed)
+        assert m >= k and n >= k
+        self.m = m  # board width
+        self.n = n  # board height
+        self.k = k  # goal
+        self.n_player = p
+        self.n_action = self.n_state = self.n_view = m * n
+
+    def _start(self):
+        return (-1,) * self.n_state, 0, None
+
+    def _step(self, state, player, action):
+        assert state[action] == -1
+        win = self.n_player - 1
+        out = tuple(win if i == player else -1 for i in range(self.n_player))
+        state = state[:action] + (player,) + state[action + 1:]
+        s = tuple(zip_longest(*([iter(state)] * self.m)))
+        for i in range(self.m):
+            for j in range(self.n):
+                if i + self.k <= self.m:
+                    if all(s[i + k][j] == player for k in range(self.k)):
+                        return None, None, out
+                if j + self.k <= self.n:
+                    if all(s[i][j + k] == player for k in range(self.k)):
+                        return None, None, out
+                if i + self.k <= self.m and j + self.k <= self.n:
+                    if all(s[i + k][j + k] == player for k in range(self.k)):
+                        return None, None, out
+        if state.count(-1) == 0:
+            return None, None, (0,) * self.n_player
+        return state, (player + 1) % self.n_player, None
+
+    def _valid(self, state, player):
+        return tuple(s == -1 for s in state)
+
+    def _check(self, state, player):
+        assert player == (len(state) - state.count(-1)) % self.n_player
+
+    def human(self, state):
+        board = tuple(zip_longest(*([iter(state)] * self.m)))
+        return '\n'.join(' '.join('%+2d' % s for s in row) for row in board)
+
+        
+games = [Null, Binary, Flip, Count, Narrow, Matching, Roshambo, Modulo, Connect3, MNKP]
 
 if __name__ == '__main__':
     from play import main  # noqa
