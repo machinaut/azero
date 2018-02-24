@@ -349,7 +349,7 @@ class MNOP(Game):
         assert m >= o and n >= o  # Otherwise game is unwinnable
         self.m = m  # board width
         self.n = n  # board height
-        self.o = o  # goal
+        self.o = o  # win length
         self.n_player = self.p = p
         self.n_action = self.n_state = self.n_view = m * n
 
