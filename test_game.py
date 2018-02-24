@@ -152,8 +152,14 @@ class TestGames(unittest.TestCase):
             XZ[(x, z)] += 1
             YZ[(y, z)] += 1
             XYZ[(x, y, z)] += 1
-        for x, y, z in product(X.keys(), Y.keys(), Z.keys()):
+        for x, y, z in XYZ.keys():
             self.assertEqual(XYZ[(x, y, z)] * Z[z], XZ[(x, z)] * YZ[(y, z)])
+        for x, (y, z) in product(X.keys(), YZ.keys()):
+            if (x, y, z) not in XYZ:
+                assert (x, z) not in XZ or (y, z) not in YZ
+        for y, (x, z) in product(Y.keys(), XZ.keys()):
+            if (x, y, z) not in XYZ:
+                assert (x, z) not in XZ or (y, z) not in YZ
 
     def check_dependence(self, data):
         ''' Ensure that Y depends entirely on X '''

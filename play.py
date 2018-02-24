@@ -6,15 +6,15 @@ from game import games
 
 
 def play(game):
-    print('Playing:', game.__class__.__name__)
-    print('Docstring:', game.__doc__)
+    print('Playing:\n', game.__class__.__name__)
+    print('Docstring:\n', game.__doc__)
     state, player, outcome = game.start()
     while outcome is None:
-        print('State:', game.human(state))
-        print('View:', game.view(state, player))
-        print('Player:', player)
+        print('State:\n' + game.human(state))
+        print('View:\n', game.view(state, player))
+        print('Player:\n', player)
         valid = game.valid(state, player)
-        print('Valid:', valid)
+        print('Valid:\n', valid)
         sparse = tuple(i for i in range(len(valid)) if valid[i])
         action = None
         while action not in sparse:
@@ -23,7 +23,7 @@ def play(game):
             except ValueError:
                 pass
         state, player, outcome = game.step(state, player, action)
-    print('Outcome:', outcome)
+    print('Outcome:\n', outcome)
 
 
 def main():
