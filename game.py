@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import random
+import numpy as np
 
 
 class Game:
@@ -276,7 +277,65 @@ class Modulo(Game):
         assert current == player
 
 
-games = [Null, Binary, Flip, Count, Narrow, Matching, Roshambo, Modulo]
+class Connect3(Game):
+    ''' Connect 4, but on a 5x4 grid.
+        State is a 5x4 numpy array, with -1 as empty, 0 as player 0, and 1 as player 1.'''
+    n_action = 5
+    n_state = 20
+    n_player = 2
+    poss = [([0, 0, 0],[0, -1, -2]),
+            ([0, -1, -2],[0, -1, -2]),
+            ([1, 0, -1],[1, 0, -1]),
+            ([2, 1, 0],[2, 1, 0]),
+            ([0, 1, 2],[0, -1, -2]),
+            ([-1, 0, 1],[1, 0, -1]),
+            ([-2, -1, 0],[2, 1, 0]),
+            ([-2, -1, 0],[0, 0, 0,]),
+            ([-1, 0, 1],[0, 0, 0,]),
+            ([0, 1, 2],[0, 0, 0,])]
+
+    def _start(self):
+        return np.ones((5,4),dtype=numpy.int8)*-1, 0, None
+
+    def _step(self, state, player, action):
+        assert state[action,-1] == -1
+        new_piece = np.where(state[action]==-1)[0][0]
+        state[action,new_piece] = player
+        #Check for victory
+        #Because I don't immediately see a simple way to check the whole board,
+        #I'm going to just check the ten possible wins that involve the new piece.
+        for poss in win_poss:
+            if self._win(state, player, action, new_piece, poss[0], poss[1]):
+                return state, None, player
+        #Check for tie
+        if not np.any(state[:,-1]==-1):
+            return state, None, -1
+        #Game continues
+        return state, 1-player, None
+    
+    def _win(self, state, player, action, new_piece, x_set, y_set):
+        win = True
+        for piece in range(3):
+            if not 0 <= action+x_set < state.shape[0]:
+                return False
+            if not 0 <= new_piece+y_set < state.shape[1]:
+                return False
+            if state[action+x_set,new_piece+y_set]:
+                return False
+        return True
+
+    def _valid(self, state, player):
+        return state[:,-1]==-1
+
+    def _view(self, state, player):
+        return ()
+
+    def _check(self, state, player):
+        total, current = state
+        assert 0 <= total < 6
+        assert current == player
+
+games = [Null, Binary, Flip, Count, Narrow, Matching, Roshambo, Modulo, Connect3]
 
 
 if __name__ == '__main__':
