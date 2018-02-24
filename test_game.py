@@ -2,6 +2,9 @@
 
 import random
 import unittest
+from collections import defaultdict
+from itertools import product
+from util import sample_logits
 from game import (games, Game,
                   Null, Binary, Flip, Count, Narrow, Matching, Roshambo,
                   Modulo)
@@ -133,6 +136,39 @@ class TestGames(unittest.TestCase):
         self.check_trajectory(Modulo(), (2, 1, 1), (-1, 1, -1))
         with self.assertRaises(AssertionError):
             self.check_trajectory(Modulo(), (3,), None)
+
+    def check_conditional_independence(self, data):
+        ''' Ensure conditional independence of X and Y given Z '''
+        X = defaultdict(int)
+        Y = defaultdict(int)
+        Z = defaultdict(int)
+        XZ = defaultdict(int)
+        YZ = defaultdict(int)
+        XYZ = defaultdict(int)
+        for x, y, z in data:
+            X[x] += 1
+            Y[y] += 1
+            Z[z] += 1
+            XZ[(x, z)] += 1
+            YZ[(y, z)] += 1
+            XYZ[(x, y, z)] += 1
+        for x, y, z in product(X.keys(), Y.keys(), Z.keys()):
+            self.assertEqual(XYZ[(x, y, z)] * Z[z], XZ[(x, z)] * YZ[(y, z)])
+
+    def test_valid_independence(self):
+        ''' Ensure valid doesn't give extra information about state '''
+        for game_cls in games:
+            game = game_cls()
+            data = []
+            for _ in range(N):
+                state, player, outcome = game.start()
+                while outcome is None:
+                    valid = game.valid(state, player)
+                    view = game.view(state, player)
+                    data.append((state, valid, view))
+                    action = sample_logits((0,) * len(valid), valid)
+                    state, player, outcome = game.step(state, player, action)
+            self.check_conditional_independence(data)
 
 
 if __name__ == '__main__':

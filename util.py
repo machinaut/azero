@@ -10,6 +10,7 @@ def view2obs(view, player):
 
 
 def softmax(x, mask=1):
+    x = np.asarray(x)
     e = np.exp(x - x.max()) * mask
     s = e.sum()
     return e / s

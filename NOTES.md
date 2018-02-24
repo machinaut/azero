@@ -45,7 +45,6 @@ Models:
 - Add MLP network
 
 Games:
-- Unit test that there's no mutual information between (valid) and (state|view)
 - Unit test that player is inferable from state (so full mutual information)
 - Add 3-player tic tac toe game
 
