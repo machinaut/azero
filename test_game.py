@@ -163,8 +163,12 @@ class TestGames(unittest.TestCase):
                 X[x] = y
             self.assertEqual(X[x], y)
 
-    def test_valid_independence(self):
-        ''' Ensure valid doesn't give extra information about state '''
+    def test_statistics(self):
+        '''
+        Statistical Quantity tests
+            - Ensure valid doesn't give extra information about state
+            - Ensure that player wholly depends on state
+        '''
         for game_cls in games:
             game = game_cls()
             state_valid_view = []
