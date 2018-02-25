@@ -358,24 +358,35 @@ class MNOP(Game):
 
     def _step(self, state, player, action):
         assert state[action] == -1
-        m, n, o, p = self.m, self.n, self.o, self.p
-        outcome = tuple(p - 1 if i == player else -1 for i in range(p))
         state = state[:action] + (player,) + state[action + 1:]
-        s = tuple(zip_longest(*([iter(state)] * m)))
-        for i, j in product(range(m - o + 1), range(n)):
-            if all(s[i + k][j] == player for k in range(o)):
-                return None, None, outcome
-        for i, j in product(range(m), range(n - o + 1)):
-            if all(s[i][j + k] == player for k in range(o)):
-                return None, None, outcome
-        for i, j in product(range(m - o + 1), range(n - o + 1)):
-            if all(s[i + k][j + k] == player for k in range(o)):
-                return None, None, outcome
-            if all(s[i + k][j + o - k - 1] == player for k in range(o)):
-                return None, None, outcome
+        if self._win(state, player, action):
+            outcome = [-1] * self.n_player
+            outcome[player] = self.n_player - 1
+            return None, None, tuple(outcome)
         if state.count(-1) == 0:
-            return None, None, (0,) * p
-        return state, (player + 1) % p, None
+            return None, None, (0,) * self.n_player
+        return state, (player + 1) % self.n_player, None
+
+    def _win(self, state, player, action):
+        assert state[action] == player  # Post state update
+        m, n, o = self.m, self.n, self.o
+        a, b = divmod(action, self.m)
+        s = tuple(zip_longest(*([iter(state)] * m)))
+        for i in range(max(0, a - o), min(a + o, m - o + 1)):
+            if all(s[i + k][b] == player for k in range(o)):
+                return True
+        for j in range(max(0, b - o), min(b + o, n - o + 1)):
+            if all(s[a][j + k] == player for k in range(o)):
+                return True
+        for l in range(max(-a, -b, 1 - o),
+                       min(m - o - a, n - o - b, o - 1) + 1):
+            if all(s[a + l + k][b + l + k] == player for k in range(o)):
+                return True
+        for l in range(max(1 - o, -a, b - n + 1),
+                       min(o - 1, m - o - a, b - o + 1) + 1):
+            if all(s[a + l + k][b - l - k] == player for k in range(o)):
+                return True
+        return False
 
     def _valid(self, state, player):
         return tuple(s == -1 for s in state)
@@ -386,6 +397,49 @@ class MNOP(Game):
     def human(self, state):
         board = tuple(zip_longest(*([iter(state)] * self.m)))
         return '\n'.join(' '.join('%+2d' % s for s in row) for row in board)
+
+
+class UTTT(Game):
+    ''' Ultimate Tic-Tac-Toe '''
+    n_action = 9
+    n_state = 81 + 9  # Super-board plus active board mask
+    n_view = 81 + 9  # Super-board plus active board mask
+    n_player = 2
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.g = MNOP(m=3, n=3, o=3, p=2)
+
+    def _start(self):
+        return (-1,) * 81 + (1,) * 9, 0, None
+
+    def _step(self, state, player, action):
+        board, active = state[:81], state[81:]
+        if sum(active) > 1:
+            assert active[action] == 1
+            active = tuple(1 if i == action else 0 for i in range(9))
+            return board + active, player, None
+        idx = active.index(1) * 9
+        sub = board[idx:idx + 9]
+        assert sub[action] == -1
+        sub = sub[:action] + (player,) + sub[action + 1:]
+        if self.g._win(sub, player):
+            pass
+
+
+    def _valid(self, state, player):
+        board, active = state[:81], state[81:]
+        if sum(active) > 1:
+            return tuple(bool(i) for i in active)
+        idx = active.index(1) * 9
+        return tuple(i == -1 for i in board[idx:idx + 9])
+
+
+
+    def _check(self, state, player):
+        board, active = state[:81], state[81:]
+        assert player == (len(board) - board.count(-1)) % self.n_player
+        assert sum(active) >= 1
 
 
 games = [Null, Binary, Flip, Count, Narrow,
