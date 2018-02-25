@@ -21,11 +21,13 @@ class Game:
         Raises AssertionError() if not!
         '''
         if outcome is None:
-            assert len(state) == self.n_state
+            if isinstance(state, tuple):
+                assert len(state) == self.n_state
+            else:
+                assert state.size == self.n_state
             assert 0 <= player < self.n_player
             self._check(state, player)
         else:
-            assert state is None
             assert player is None
             assert len(outcome) == self.n_player
 
@@ -37,7 +39,7 @@ class Game:
         Start a new game, returns
             state - game state tuple
             player - index of the next player
-            outcome - index of winning player or None if game is not over
+            outcome - tuple or array of rewards or None if game is not over
         '''
         state, player, outcome = self._start()
         self.check(state, player, outcome)
@@ -55,7 +57,7 @@ class Game:
         Returns
             state - next state object (can be None)
             player - next player index or None if game is over
-            outcome - index of winning player or None if game is not over
+            outcome - tuple or array of rewards or None if game is not over
         '''
         self.check(state, player)
         assert 0 <= action < self.n_action
@@ -308,20 +310,20 @@ class Connect3(Game):
         # I'm going to just check the ten possible wins that involve the new piece.
         for poss in self.poss:
             if self._win(state, player, action, new_piece, poss[0], poss[1]):
-                return state, None, player
+                return state, None, [(1, -1), (-1, 1)][player]
         # Check for tie
         if not np.any(state[:, -1] == -1):
-            return state, None, -1
+            return state, None, (0, 0)
         # Game continues
         return state, 1 - player, None
 
     def _win(self, state, player, action, new_piece, x_set, y_set):
         for piece in range(3):
-            if not 0 <= action + x_set < state.shape[0]:
+            if not 0 <= action + x_set[piece] < state.shape[0]:
                 return False
-            if not 0 <= new_piece + y_set < state.shape[1]:
+            if not 0 <= new_piece + y_set[piece] < state.shape[1]:
                 return False
-            if state[action + x_set, new_piece + y_set]:
+            if state[action + x_set[piece], new_piece + y_set[piece]] != player:
                 return False
         return True
 
@@ -399,7 +401,7 @@ class MNOP(Game):
 
 
 games = [Null, Binary, Flip, Count, Narrow,
-         Matching, Roshambo, Modulo, MNOP]
+         Matching, Roshambo, Modulo, Connect3, MNOP]
 
 if __name__ == '__main__':
     from play import main  # noqa
