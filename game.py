@@ -426,15 +426,12 @@ class UTTT(Game):
         if self.g._win(sub, player):
             pass
 
-
     def _valid(self, state, player):
         board, active = state[:81], state[81:]
         if sum(active) > 1:
             return tuple(bool(i) for i in active)
         idx = active.index(1) * 9
         return tuple(i == -1 for i in board[idx:idx + 9])
-
-
 
     def _check(self, state, player):
         board, active = state[:81], state[81:]
