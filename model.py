@@ -54,8 +54,8 @@ class Uniform(Model):
 
 class Linear(Model):
     ''' Simple linear model '''
-    def __init__(self, n_action, n_view, n_player, seed=None, scale=0.01):
-        super().__init__(n_action, n_view, n_player)
+    def __init__(self, *args, seed=None, scale=0.01, **kwargs):
+        super().__init__(*args, **kwargs)
         rs = np.random.RandomState(seed)
         self.W = rs.randn(self.n_obs, self.n_act) * scale
         self.V = rs.randn(self.n_obs, self.n_val) * scale
@@ -68,8 +68,8 @@ class Linear(Model):
 
 class Memorize(Model):
     ''' Remember and re-use training data '''
-    def __init__(self, n_action, n_view, n_player):
-        super().__init__(n_action, n_view, n_player)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.data = {}  # Map from tuple(state) -> (logits, outcome)
 
     def _model(self, obs):
@@ -79,6 +79,11 @@ class Memorize(Model):
         logits = np.ones(self.n_act) * zero
         values = np.ones(self.n_val) * zero
         return self.data.get(tuple(obs), (logits, values))
+
+
+# class MLP(Model):
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
 
 
 models = [Uniform, Linear, Memorize]
