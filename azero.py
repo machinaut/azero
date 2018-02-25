@@ -106,7 +106,7 @@ class AlphaZero:
         '''
         Play a whole game, and get states on which to update
         Return tuple of:
-            trajectory - (obs, logits) for each step
+            trajectory - (observation, probabilities) for each step
             outcome - final reward for each player
         '''
         trajectory = []
@@ -115,8 +115,7 @@ class AlphaZero:
             probs, _ = self.search(state, player)
             action = sample_probs(probs)
             obs = view2obs(self._game.view(state, player), player)
-            logits = -np.log((1 / (probs + self.eps)) - 1)
-            trajectory.append((obs, logits))
+            trajectory.append((obs, probs))
             state, player, outcome = self._game.step(state, player, action)
         return trajectory, outcome
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
+from collections import OrderedDict
 import nn
 from util import pairwise
 
@@ -33,7 +34,7 @@ class Model:
     def update(self, games):
         '''
         Update model given a list of games.  Each game is a pair of:
-            trajectory - list of (obs, logits)
+            trajectory - list of (obs, probs)
             outcome - total reward per player
         '''
         self.n_updates += 1
@@ -84,22 +85,30 @@ class Memorize(Model):
 
 
 class MLP(Model):
-    def __init__(self, *args, seed=None, scale=0.01, hidden_dims=[100], **kwargs):
+    def __init__(self, *args, seed=None, scale=0.01, hidden_dims=[100], c=0.5,
+                 learning_rate=1e-3, **kwargs):
         super().__init__(*args, **kwargs)
-        rs = np.random.RandomState(seed)
-        self.params = dict()
+        self.c = c  # Linear combination of loss terms (probabilities and values)
+        self.learning_rate = learning_rate  # Step size of updates
+        self.rs = np.random.RandomState(seed)
+        self.params = OrderedDict()
         all_dims = [self.n_obs] + hidden_dims + [self.n_act + self.n_val]
         for i, (in_dim, out_dim) in enumerate(pairwise(all_dims)):
-            self.params['W%d' % i] = rs.randn(in_dim, out_dim) * scale
+            self.params['W%d' % i] = self.rs.randn(in_dim, out_dim) * scale
             self.params['b%d' % i] = np.zeros(out_dim)
         self.n_layer = len(all_dims) - 1
 
-    def _model(self, x):
+    def _model(self, obs):
+        x, _ = self._fwd(obs.reshape(1, -1))
+        return x[0, :self.n_act], x[0, self.n_act:]
+
+    def _fwd(self, x):
+        c = OrderedDict()
         for i in range(self.n_layer):
-            x, _ = nn.mlp_fwd(x, self.params['W%d' % i], self.params['b%d' % i])
+            x, c[i] = nn.mlp_fwd(x, self.params['W%d' % i], self.params['b%d' % i])
             if i < self.n_layer - 1:
-                x, _ = nn.relu_fwd(x)
-        return x[:self.n_act], x[self.n_act:]
+                x, c['r%d' % i] = nn.relu_fwd(x)
+        return x, c
 
 
 models = [Uniform, Linear, Memorize, MLP]

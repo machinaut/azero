@@ -53,28 +53,6 @@ class TestNN(unittest.TestCase):
         np.testing.assert_allclose(dW, nW)
         np.testing.assert_allclose(db, nb)
 
-    def test_xel2(self):
-        rs = np.random.RandomState(1)
-        A, B, C = 5, 4, 3
-        a = rs.rand(A, B)
-        b = rs.rand(A, B)
-        c = rs.rand(A, C)
-        d = rs.rand(A, C)
-        e = rs.rand(1)
-        out, cache = nn.xel2_fwd(a, b, c, d, e)
-        dout = rs.rand(A)
-        da, db, dc, dd, de = nn.xel2_bak(dout, cache)
-        na = finite_difference(lambda x: nn.xel2_fwd(x, b, c, d, e)[0], a, dout)
-        nb = finite_difference(lambda x: nn.xel2_fwd(a, x, c, d, e)[0], b, dout)
-        nc = finite_difference(lambda x: nn.xel2_fwd(a, b, x, d, e)[0], c, dout)
-        nd = finite_difference(lambda x: nn.xel2_fwd(a, b, c, x, e)[0], d, dout)
-        ne = finite_difference(lambda x: nn.xel2_fwd(a, b, c, d, x)[0], e, dout)
-        np.testing.assert_allclose(da, na, atol=1e-7)
-        np.testing.assert_allclose(db, nb, atol=1e-7)
-        np.testing.assert_allclose(dc, nc, atol=1e-7)
-        np.testing.assert_allclose(dd, nd, atol=1e-7)
-        np.testing.assert_allclose(de, ne, atol=1e-7)
-
 
 if __name__ == '__main__':
     unittest.main()
