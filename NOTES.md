@@ -45,6 +45,10 @@ Models:
 - Add Boltzmann machine
 - Add random forests
 
+NN:
+- Add dropout
+- Add batchnorm
+
 Games:
 - make more TODO items
 

@@ -2,6 +2,7 @@
 
 import numpy as np
 import nn
+from util import pairwise
 
 
 class Model:
@@ -83,16 +84,22 @@ class Memorize(Model):
 
 
 class MLP(Model):
-    def __init__(self, *args, seed=None, scale=0.01, **kwargs):
+    def __init__(self, *args, seed=None, scale=0.01, hidden_dims=[100], **kwargs):
         super().__init__(*args, **kwargs)
         rs = np.random.RandomState(seed)
-        self.n_out = self.n_act + self.n_val
-        self.W = rs.randn(self.n_obs, self.n_out) * scale
-        self.b = rs.randn(self.n_out) * scale
+        self.params = dict()
+        all_dims = [self.n_obs] + hidden_dims + [self.n_act + self.n_val]
+        for i, (in_dim, out_dim) in enumerate(pairwise(all_dims)):
+            self.params['W%d' % i] = rs.randn(in_dim, out_dim) * scale
+            self.params['b%d' % i] = np.zeros(out_dim)
+        self.n_layer = len(all_dims) - 1
 
-    def _model(self, obs):
-        y, _ = nn.mlp_fwd(obs, self.W, self.b)
-        return y[:self.n_act], y[self.n_act:]
+    def _model(self, x):
+        for i in range(self.n_layer):
+            x, _ = nn.mlp_fwd(x, self.params['W%d' % i], self.params['b%d' % i])
+            if i < self.n_layer - 1:
+                x, _ = nn.relu_fwd(x)
+        return x[:self.n_act], x[self.n_act:]
 
 
 models = [Uniform, Linear, Memorize, MLP]
