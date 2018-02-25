@@ -344,8 +344,8 @@ class Connect3(Game):
 class MNOP(Game):
     ''' Generalized tic-tac-toe '''
 
-    def __init__(self, m=3, n=3, o=3, p=2, seed=None):
-        super().__init__(seed=seed)
+    def __init__(self, m=3, n=3, o=3, p=2, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         assert m >= o and n >= o  # Otherwise game is unwinnable
         self.m = m  # board width
         self.n = n  # board height
@@ -398,48 +398,71 @@ class MNOP(Game):
         return '\n'.join(' '.join('%+2d' % s for s in row) for row in board)
 
 
-class UTTT(Game):
+class MetaMNOP(Game):
     ''' Ultimate Tic-Tac-Toe '''
-    n_action = 9
-    n_state = 81 + 9  # Super-board plus active board mask
-    n_view = 81 + 9  # Super-board plus active board mask
-    n_player = 2
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, m=3, n=3, o=3, p=2, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.g = MNOP(m=3, n=3, o=3, p=2)
+        self.m = m  # board width
+        self.n = n  # board height
+        self.o = o  # win length
+        self.n_player = p
+        self.n_action = self.mn = mn = m * n
+        self.mn2 = mn2 = mn * mn
+        self.n_view = mn2 + mn
+        self.n_state = mn2 + mn * 2
+        self.g = MNOP(m=3, n=3, o=3, p=2)  # used for win testing
 
     def _start(self):
-        return (-1,) * 81 + (1,) * 9, 0, None
+        return (-1,) * self.mn2 + (1,) * self.mn + (-1,) * self.mn, 0, None
 
     def _step(self, state, player, action):
-        board, active = state[:81], state[81:]
+        mn2, mn3 = self.mn2, self.mn2 + self.mn
+        board, active, finals = state[:mn2], state[mn2:mn3], state[mn3:]
         if sum(active) > 1:
             assert active[action] == 1
             active = tuple(1 if i == action else 0 for i in range(9))
-            return board + active, player, None
-        idx = active.index(1) * 9
-        sub = board[idx:idx + 9]
+            return board + active + finals, player, None
+        idx = active.index(1)
+        imn = idx * self.mn
+        sub = board[imn:imn + self.mn]
         assert sub[action] == -1
         sub = sub[:action] + (player,) + sub[action + 1:]
-        if self.g._win(sub, player):
-            pass
+        board = board[:imn] + sub + board[imn + self.mn:]
+        if self.g._win(sub, player, action):
+            assert finals[idx] == -1
+            finals = finals[:idx] + (player,) + finals[idx + 1:]
+            if self.g._win(finals, player, idx):
+                outcome = [-1] * self.n_player
+                outcome[player] = self.n_player - 1
+                return None, None, tuple(outcome)
+        if finals[action] == -1:
+            active = tuple(1 if i == action else 0 for i in range(self.mn))
+            return board + active + finals, (player + 1) % self.n_player, None
+        active = tuple(1 if f == -1 else 0 for f in finals)
+        return board + active + finals, (player + 1) % self.n_player, None
 
     def _valid(self, state, player):
-        board, active = state[:81], state[81:]
+        mn2, mn3 = self.mn2, self.mn2 + self.mn
+        board, active = state[:mn2], state[mn2:mn3]
         if sum(active) > 1:
             return tuple(bool(i) for i in active)
-        idx = active.index(1) * 9
-        return tuple(i == -1 for i in board[idx:idx + 9])
+        idx = active.index(1) * self.mn
+        return tuple(i == -1 for i in board[idx:idx + self.mn])
+
+    def _view(self, state, player):
+        return state[:self.n_view]
 
     def _check(self, state, player):
-        board, active = state[:81], state[81:]
+        mn2, mn3 = self.mn2, self.mn2 + self.mn
+        board, active, finals = state[:mn2], state[mn2:mn3], state[mn3:]
         assert player == (len(board) - board.count(-1)) % self.n_player
         assert sum(active) >= 1
+        assert finals.index(-1) >= 0
 
 
 games = [Null, Binary, Flip, Count, Narrow,
-         Matching, Roshambo, Modulo, MNOP]
+         Matching, Roshambo, Modulo, MNOP, MetaMNOP]
 
 if __name__ == '__main__':
     from play import main  # noqa
