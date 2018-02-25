@@ -11,7 +11,7 @@ def relu_fwd(x):
 
 
 def relu_bak(dout, cache):
-    ''' rectified linear unit - forward pass '''
+    ''' rectified linear unit - backward pass '''
     x, = cache
     dx = dout * (x > 0)
     return dx
