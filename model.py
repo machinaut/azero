@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
+import nn
 
 
 class Model:
@@ -81,9 +82,17 @@ class Memorize(Model):
         return self.data.get(tuple(obs), (logits, values))
 
 
-# class MLP(Model):
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
+class MLP(Model):
+    def __init__(self, *args, seed=None, scale=0.01, **kwargs):
+        super().__init__(*args, **kwargs)
+        rs = np.random.RandomState(seed)
+        self.n_out = self.n_act + self.n_val
+        self.W = rs.randn(self.n_obs, self.n_out) * scale
+        self.b = rs.randn(self.n_out) * scale
+
+    def _model(self, obs):
+        y, _ = nn.mlp_fwd(obs, self.W, self.b)
+        return y[:self.n_act], y[self.n_act:]
 
 
-models = [Uniform, Linear, Memorize]
+models = [Uniform, Linear, Memorize, MLP]
