@@ -2,7 +2,7 @@
 
 import random
 import numpy as np
-from itertools import zip_longest, product
+from itertools import zip_longest
 
 
 class Game:
@@ -369,22 +369,21 @@ class MNOP(Game):
 
     def _win(self, state, player, action):
         assert state[action] == player  # Post state update
-        m, n, o = self.m, self.n, self.o
+        m, n, o, s = self.m, self.n, self.o, state  # Shorthand for short lines
         a, b = divmod(action, self.m)
-        s = tuple(zip_longest(*([iter(state)] * m)))
         for i in range(max(0, a - o), min(a + o, m - o + 1)):
-            if all(s[i + k][b] == player for k in range(o)):
+            if all(s[(i + k) * m + b] == player for k in range(o)):
                 return True
         for j in range(max(0, b - o), min(b + o, n - o + 1)):
-            if all(s[a][j + k] == player for k in range(o)):
+            if all(s[a * m + j + k] == player for k in range(o)):
                 return True
         for l in range(max(-a, -b, 1 - o),
                        min(m - o - a, n - o - b, o - 1) + 1):
-            if all(s[a + l + k][b + l + k] == player for k in range(o)):
+            if all(s[(a + l + k) * m + b + l + k] == player for k in range(o)):
                 return True
         for l in range(max(1 - o, -a, b - n + 1),
                        min(o - 1, m - o - a, b - o + 1) + 1):
-            if all(s[a + l + k][b - l - k] == player for k in range(o)):
+            if all(s[(a + l + k) * m + b - l - k] == player for k in range(o)):
                 return True
         return False
 
