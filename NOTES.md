@@ -42,9 +42,8 @@ Azero:
 Models:
 - Add update and tests
 - Add RBF network
-- Add nonlinearities to MLP
-- Add hidden states to MLP
 - Add Boltzmann machine
+- Add random forests
 
 Games:
 - make more TODO items
