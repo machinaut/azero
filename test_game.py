@@ -7,7 +7,7 @@ from itertools import product
 from util import sample_logits
 from game import (games, Game,
                   Null, Binary, Flip, Count, Narrow, Matching, Roshambo,
-                  Modulo, MNOP)
+                  Modulo, Connect3, MNOP)
 
 N = 100
 
@@ -136,6 +136,10 @@ class TestGames(unittest.TestCase):
         self.check_trajectory(Modulo(), (2, 1, 1), (-1, 1, -1))
         with self.assertRaises(AssertionError):
             self.check_trajectory(Modulo(), (3,), None)
+        self.check_trajectory(Connect3(), (0, 1, 0, 1, 0), (1, -1))
+        self.check_trajectory(Connect3(), (0, 1, 0, 2, 4, 3), (-1, 1))
+        self.check_trajectory(Connect3(), (0, 1, 1, 2, 3, 2, 2), (1, -1))
+        self.check_trajectory(Connect3(), (1, 2, 0, 1, 0, 0), (-1, 1))
         self.check_trajectory(MNOP(), (0, 3, 1, 4, 2), (1, -1))
         self.check_trajectory(MNOP(), (0, 1, 4, 2, 8), (1, -1))
         self.check_trajectory(MNOP(), (0, 1, 3, 2, 6), (1, -1))
