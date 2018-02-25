@@ -4,12 +4,14 @@ import numpy as np
 
 
 def mlp_fwd(x, W, b):
+    ''' multi-layer perceptron - forward pass '''
     out = x.dot(W) + b
     cache = (x, W, b)
     return out, cache
 
 
 def mlp_bak(dout, cache):
+    ''' multi-layer perceptron - backward pass '''
     x, W, b = cache
     dx = dout.dot(W.T)
     dW = x.T.dot(dout)
@@ -18,6 +20,7 @@ def mlp_bak(dout, cache):
 
 
 def xel2_fwd(p, q, v, z, c):
+    ''' cross-entropy and L2 loss - forward pass '''
     d = v - z
     xent = p.dot(q)
     l2 = np.square(d).sum()
@@ -27,6 +30,7 @@ def xel2_fwd(p, q, v, z, c):
 
 
 def xel2_bak(dout, cache):
+    ''' cross-entropy and L2 loss - backward pass '''
     p, q, d, xent, l2, c = cache
     dp = dout * c * q
     dq = dout * c * p
