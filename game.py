@@ -3,6 +3,8 @@
 import random
 import numpy as np
 from itertools import zip_longest
+''' for Nim  '''
+from functools import reduce
 
 
 class Game:
@@ -103,6 +105,7 @@ class Game:
     def human(self, state):
         ''' Print out a human-readable state '''
         return str(state)
+
 
 
 class Null(Game):
@@ -343,6 +346,51 @@ class Connect3(Game):
         return '\n'.join(buffer)
 
 
+class Nim(Game):
+    ''' Nim, see https://en.wikipedia.org/wiki/Nim '''
+    
+    def __init__(self, s=(3,5,7), p=2, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.ps = len(s)  # number of piles
+        self.mp = max(s) # largest pile
+        self.n_player = self.p = p
+        self.n_action = self.n_state = self.n_view = self.ps * self.mp 
+        self.st = (0,) * self.n_state 
+        for i in range(self.ps):
+            for j in range(s[i]):
+                k = i * self.mp + j
+                self.st = self.st[:k] + (1,) + self.st[k+1:]
+
+    def _start(self):
+        return self.st, 0, None
+
+    def _step(self, state, player, action):
+        assert state[action] == 1
+        cap = (int(action / self.mp) + 1) * self.mp # beginning index of the next pile
+        # remove all the stones until the next pile
+        i = action 
+        while i < cap:
+            state = state[:i] + (0,) + state[i + 1:]
+            i += 1
+        if self._win(state, player, action):
+            outcome = [-1] * self.n_player
+            outcome[player] = self.n_player - 1
+            return None, None, tuple(outcome)
+        return state, (player + 1) % self.n_player, None
+
+    def _win(self, state, player, action):
+        assert state[action] == 0 # Post state update
+        if state.count(1) == 0:
+            return True
+
+    def _valid(self, state, player):
+        return tuple(s == 1 for s in state)
+
+    def human(self, state):
+        board = tuple(zip_longest(*([iter(state)] * self.mp)))
+        return '\n'.join(' '.join('%+2d' % s for s in row) for row in board)
+
+
 class MNOP(Game):
     ''' Generalized tic-tac-toe '''
 
@@ -401,7 +449,7 @@ class MNOP(Game):
 
 
 games = [Null, Binary, Flip, Count, Narrow,
-         Matching, Roshambo, Modulo, Connect3, MNOP]
+         Matching, Roshambo, Modulo, Nim, MNOP]
 
 if __name__ == '__main__':
     from play import main  # noqa
