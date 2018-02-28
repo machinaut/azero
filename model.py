@@ -103,12 +103,29 @@ class MLP(Model):
         return x[0, :self.n_act], x[0, self.n_act:]
 
     def _fwd(self, x):
-        c = OrderedDict()
+        cache = OrderedDict()
         for i in range(self.n_layer):
-            x, c[i] = nn.mlp_fwd(x, self.params['W%d' % i], self.params['b%d' % i])
+            W, b = self.params['W%d' % i], self.params['b%d' % i]
+            x, cache[i] = nn.mlp_fwd(x, W, b)
             if i < self.n_layer - 1:
-                x, c['r%d' % i] = nn.relu_fwd(x)
-        return x, c
+                x, cache['r%d' % i] = nn.relu_fwd(x)
+        return x, cache
+
+    def _bak(self, dx, cache):
+        grads = OrderedDict()
+        for i in range(self.n_layer - 1, -1, -1):
+            grads['W%d' % i], grads['b%d' % i] = nn.mlp_bak(dx, cache[i])
+            if i < self.n_layer - 1:
+                dx = nn.relu_bak(dx, cache['r%d' % i])
+        return grads
+
+    def _loss(self, obs, q, outcome):
+        assert obs.ndim == 2
+        x, cache = self._fwd(obs)
+        loss, cache['loss'] = nn.loss_fwd(x, q, outcome, self.c)
+        dx = nn.loss_bak(np.ones(1), cache['loss'])
+        grads = self._bak(dx, cache)
+        return loss, grads
 
 
 models = [Uniform, Linear, Memorize, MLP]
