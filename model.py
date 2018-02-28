@@ -85,7 +85,7 @@ class Memorize(Model):
 
 
 class MLP(Model):
-    def __init__(self, *args, seed=None, scale=0.01, hidden_dims=[100], c=0.5,
+    def __init__(self, *args, seed=None, scale=0.01, hidden_dims=[10], c=0.5,
                  learning_rate=1e-3, **kwargs):
         super().__init__(*args, **kwargs)
         self.c = c  # Linear combination of loss terms (probs and values)
