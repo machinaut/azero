@@ -59,20 +59,17 @@ class TestNN(unittest.TestCase):
     def test_loss(self):
         rs = np.random.RandomState(0)
         A, B, C = 5, 4, 3
-        x = rs.randn(A, B)
+        x = rs.randn(A, B + C)
         q = rs.randn(A, B)
-        v = rs.randn(A, C)
         z = rs.randn(A, C)
         c = rs.randn(1)
         dout = rs.randn(A, 1)
-        for arr in (x, q, v, z, c, dout):
+        for arr in (x, q, z, c, dout):
             arr.setflags(write=False)
-        out, cache = nn.loss_fwd(x, q, v, z, c)
-        dx, dv = nn.loss_bak(dout, cache)
-        nx = finite_difference(lambda y: nn.loss_fwd(y, q, v, z, c)[0], x, dout)
-        nv = finite_difference(lambda y: nn.loss_fwd(x, q, y, z, c)[0], v, dout)
+        out, cache = nn.loss_fwd(x, q, z, c)
+        dx = nn.loss_bak(dout, cache)
+        nx = finite_difference(lambda y: nn.loss_fwd(y, q, z, c)[0], x, dout)
         np.testing.assert_allclose(dx, nx, atol=1e-6)
-        np.testing.assert_allclose(dv, nv, atol=1e-6)
 
 
 if __name__ == '__main__':

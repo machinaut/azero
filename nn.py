@@ -33,9 +33,12 @@ def mlp_bak(dout, cache):
     return dx, dW, db
 
 
-def loss_fwd(x, q, v, z, c):
+def loss_fwd(x, q, z, c):
     ''' softmax cross-entropy and mean-squared-error combination - forward '''
-    logits = x - np.max(x, axis=1, keepdims=True)
+    assert x.shape[0] == q.shape[0] == z.shape[0]
+    y, v = x[:, :q.shape[1]], x[:, q.shape[1]:]
+    assert y.shape == q.shape and v.shape == z.shape
+    logits = y - np.max(y, axis=1, keepdims=True)
     e = np.exp(logits)
     Z = np.sum(e, axis=1, keepdims=True)
     logp = logits - np.log(Z)
@@ -50,7 +53,9 @@ def loss_fwd(x, q, v, z, c):
 def loss_bak(dout, cache):
     ''' softmax cross-entropy and mean-squared-error combination - backward '''
     q, e, Z, d, c = cache
-    dv = 2 * d * (1 - c) * dout
-    dlogp = c * dout * q
-    dx = dlogp - e * (np.sum(dlogp, axis=1, keepdims=True) / Z)
-    return dx, dv
+    D, P = q.shape
+    dx = np.empty((D, P + d.shape[1]))
+    dx[:, P:] = 2 * d * (1 - c) * dout
+    dx[:, :P] = c * dout * q
+    dx[:, :P] -= e * (np.sum(dx[:, :P], axis=1, keepdims=True) / Z)
+    return dx

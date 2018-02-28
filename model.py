@@ -88,7 +88,7 @@ class MLP(Model):
     def __init__(self, *args, seed=None, scale=0.01, hidden_dims=[100], c=0.5,
                  learning_rate=1e-3, **kwargs):
         super().__init__(*args, **kwargs)
-        self.c = c  # Linear combination of loss terms (probabilities and values)
+        self.c = c  # Linear combination of loss terms (probs and values)
         self.learning_rate = learning_rate  # Step size of updates
         self.rs = np.random.RandomState(seed)
         self.params = OrderedDict()
