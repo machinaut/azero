@@ -48,9 +48,9 @@ class TestModel(unittest.TestCase):
                     state, player, outcome = game.step(state, player, action)
 
     def test_mlp_overfit(self):
-        azero = AlphaZero.make(MNOP, MLP)
+        azero = AlphaZero.make(MNOP, MLP, seed=0)
         games = azero.play_multi()
-        obs, q, z = sample_games(games)
+        obs, q, z = sample_games(games, rs=azero.rs)
         for _ in range(10):
             loss, _ = azero._model._loss(obs, q, z)
             print('loss', loss)

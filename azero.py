@@ -48,7 +48,7 @@ class AlphaZero:
                  eps=1e-6,
                  sims_per_search=100):
         ''' Train a model to play a game with the AlphaZero algorithm '''
-        self.rs = np.random.RandomState(seed=seed)
+        self.rs = np.random.RandomState(seed)
         self._game = game
         self._model = model
         self.c_puct = c_puct
@@ -113,7 +113,7 @@ class AlphaZero:
         state, player, outcome = self._game.start()
         while outcome is None:
             probs, _ = self.search(state, player)
-            action = sample_probs(probs)
+            action = sample_probs(probs, rs=self.rs)
             obs = self._game.view(state, player)
             trajectory.append((obs, probs))
             state, player, outcome = self._game.step(state, player, action)
