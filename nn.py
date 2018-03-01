@@ -40,7 +40,7 @@ def loss_fwd(x, q, z, c):
     e = np.exp(logits)
     Z = np.sum(e, axis=1, keepdims=True)
     d = x[:, P:] - z
-    out = (c * np.sum((logits - np.log(Z)) * q, axis=1, keepdims=True) +
+    out = (-c * np.sum((logits - np.log(Z)) * q, axis=1, keepdims=True) +
            (1 - c) * np.sum(np.square(d), axis=1, keepdims=True))
     cache = (q, e, Z, d, c)
     return out, cache
@@ -52,6 +52,6 @@ def loss_bak(dout, cache):
     D, P = q.shape
     dx = np.empty((D, P + d.shape[1]))
     dx[:, P:] = 2 * d * (1 - c) * dout
-    dx[:, :P] = c * dout * q
+    dx[:, :P] = -c * dout * q
     dx[:, :P] -= e * (np.sum(dx[:, :P], axis=1, keepdims=True) / Z)
     return dx

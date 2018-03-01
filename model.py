@@ -93,7 +93,7 @@ class Memorize(Model):
         zero = np.sum(obs) * 0.0
         logits = np.ones(self.n_act) * zero
         values = np.ones(self.n_val) * zero
-        return self.data.get(tuple(obs), (logits, values))
+        return self.data.get(obs.tostring(), (logits, values))
 
 
 class MLP(Model):
@@ -131,7 +131,7 @@ class MLP(Model):
         return grads
 
     def _loss(self, obs, q, outcome):
-        assert obs.ndim == 2
+        obs = obs.reshape(obs.shape[0], -1)
         x, cache = self._fwd(obs)
         loss, cache['loss'] = nn.loss_fwd(x, q, outcome, self.c)
         dx = nn.loss_bak(np.ones(1), cache['loss'])
