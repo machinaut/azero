@@ -42,12 +42,13 @@ class Tree:
 
 
 class AlphaZero:
-    def __init__(self, game, model,
+    def __init__(self, game, model, seed=None,
                  c_puct=1.0,
                  tau=1.0,
                  eps=1e-6,
                  sims_per_search=100):
         ''' Train a model to play a game with the AlphaZero algorithm '''
+        self.rs = np.random.RandomState(seed=seed)
         self._game = game
         self._model = model
         self.c_puct = c_puct
@@ -56,11 +57,11 @@ class AlphaZero:
         self.sims_per_search = sims_per_search
 
     @classmethod
-    def make(cls, game_cls, model_cls, *args, **kwargs):
+    def make(cls, game_cls, model_cls, seed=None, *args, **kwargs):
         ''' Convenience method to build from game and model classes '''
-        game = game_cls()
-        model = model_cls(game.n_action, game.n_view, game.n_player)
-        return cls(game=game, model=model, *args, **kwargs)
+        game = game_cls(seed=seed)
+        model = model_cls(game.n_action, game.n_view, game.n_player, seed=seed)
+        return cls(game=game, model=model, seed=seed, *args, **kwargs)
 
     def model(self, state, player):
         ''' Wrap the model to give the proper view and mask actions '''

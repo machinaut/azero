@@ -183,7 +183,7 @@ class TestGames(unittest.TestCase):
                 state, player, outcome = game.start()
                 while outcome is None:
                     valid = game.valid(state, player)
-                    view = tuple(game.view(state, player))
+                    view = game.view(state, player).tostring()
                     tstate = tuple(state)
                     state_valid_view.append((tstate, valid, view))
                     state_player.append((tstate, player))
