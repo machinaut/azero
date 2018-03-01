@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import random
 import numpy as np
 from itertools import tee
 
@@ -30,3 +31,9 @@ def sample_logits(logits, valid=1):
 
 def sample_probs(probs):
     return np.random.choice(range(len(probs)), p=probs)
+
+
+def sample_games(games):
+    ''' Return (observation, probabilities, outcomes) arrays for training '''
+    s = sum([[(o, q, z) for o, q in t] for t, z in games], [])
+    return map(np.array, zip(*random.sample(s, len(games))))

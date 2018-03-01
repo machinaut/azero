@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 
-import random
 import numpy as np
 from collections import OrderedDict
 
 import nn
-from util import pairwise
+from util import pairwise, sample_games
 
 
 class Model:
@@ -47,10 +46,8 @@ class Model:
         # Optionally overwrite this to get dense updates
         # Default is to sample single data point from each game
         # and pass them to _sparse_update().
-        s = sum([[(o, np.r_[p, z]) for o, p in t] for t, z in games], [])
-        d = [s[i] for i in self.rs.choice(len(s), len(games), replace=False)]
-        obs, y = (np.array(a) for a in zip(*d))  # inputs and outputs
-        self._sparse_update(obs, y)
+        obs, q, z = sample_games(games)
+        self._sparse_update(obs, q, z)
 
     def _sparse_update(self, obs, y):
         raise NotImplementedError('Implement this or _update() in subclass')
@@ -137,8 +134,8 @@ class MLP(Model):
         grads = self._bak(dx, cache)
         return loss, grads
 
-    def _update(self, games):
-        pass
+    def _sparse_update(self, x, y):
+        loss, grads = self._loss(x, y[:, :self.n_act], y[:, self.n_act])
 
 
 models = [Uniform, Linear, Memorize, MLP]
