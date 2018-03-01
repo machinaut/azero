@@ -61,7 +61,7 @@ class TestModel(unittest.TestCase):
         # We should have a better score than the correct answer
         # This is due to cross-entropy loss being lower if we extremize
         true, _ = loss_fwd(np.c_[q, z], q, z, azero._model.c)
-        self.assertLess(loss, np.sum(true))
+        self.assertLess(loss, np.mean(true))
 
 
 if __name__ == '__main__':

@@ -92,11 +92,13 @@ class AlphaZero:
         tree.backup(action, values[player])
         return values
 
-    def search(self, state, player):
+    def search(self, state, player, sims_per_search=None):
         ''' MCTS to generate move probabilities for a state '''
+        if sims_per_search is None:
+            sims_per_search = self.sims_per_search
         prior, _ = self.model(state, player)
         tree = Tree(prior, self.c_puct)
-        for _ in range(self.sims_per_search):
+        for _ in range(sims_per_search):
             self.simulate(state, player, tree)
         pi = np.power(tree.N, 1 / self.tau)
         probs = pi / np.sum(pi)
@@ -119,9 +121,18 @@ class AlphaZero:
             state, player, outcome = self._game.step(state, player, action)
         return trajectory, outcome
 
-    def play_multi(self, n=10):
+    def play_multi(self, n_games=10):
         '''
         Play multiple whole games, return a list of game results.
         See play() for result of a single game.
         '''
-        return [self.play() for _ in range(n)]
+        return [self.play() for _ in range(n_games)]
+
+    def train(self, n_epochs=10, n_games=10):
+        '''
+        Train the model for a number of epochs of multi-play
+        '''
+        for i in range(n_epochs):
+            games = self.play_multi(n_games=n_games)
+            loss = self._model.update(games)
+            print('epoch', i, 'loss', loss)

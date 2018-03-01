@@ -16,6 +16,11 @@ class Model:
         self.n_val = n_player
         self.n_updates = 0
 
+    @classmethod
+    def make(cls, game):
+        ''' Build an instance from a game '''
+        return cls(game.n_action, game.n_view, game.n_player)
+
     def model(self, obs):
         '''
         Call the model on a board state
@@ -41,16 +46,17 @@ class Model:
         Update model given a list of games.  Each game is a pair of:
             trajectory - list of (obs, probs)
             outcome - total reward per player
+        Returns loss (may be evaluated over a subset of game states)
         '''
         self.n_updates += 1
-        self._update(games)
+        return self._update(games)
 
     def _update(self, games):
         # Optionally overwrite this to get dense updates
         # Default is to sample single data point from each game
         # and pass them to _sparse_update().
         obs, q, z = sample_games(games)
-        self._sparse_update(obs, q, z)
+        return self._sparse_update(obs, q, z)
 
     def _sparse_update(self, obs, q, z):
         raise NotImplementedError('Implement this or _update() in subclass')
@@ -136,12 +142,13 @@ class MLP(Model):
         loss, cache['loss'] = nn.loss_fwd(x, q, outcome, self.c)
         dx = nn.loss_bak(np.ones(1), cache['loss'])
         grads = self._bak(dx, cache)
-        return np.sum(loss), grads
+        return np.mean(loss), grads
 
     def _sparse_update(self, x, q, z):
         loss, grads = self._loss(x, q, z)
         for name in self.params.keys():
             self.params[name] -= self.learning_rate * grads[name]
+        return loss
 
 
 models = [Uniform, Linear, Memorize, MLP]
