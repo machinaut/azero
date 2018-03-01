@@ -36,8 +36,9 @@ class TestModel(unittest.TestCase):
                 state, player, outcome = game.start()
                 while outcome is None:
                     obs = game.view(state, player)
-                    bad_obs = obs.copy()
+                    bad_obs = obs.copy().flatten()
                     bad_obs[random.randrange(model.n_obs)] = np.nan
+                    bad_obs = bad_obs.reshape(obs.shape)
                     bad_logits, bad_value = model.model(bad_obs)
                     assert np.isnan(bad_value).all()
                     assert np.isnan(bad_logits).all()

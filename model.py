@@ -75,6 +75,7 @@ class Linear(Model):
         self.V = self.rs.randn(self.n_obs, self.n_val) * scale
 
     def _model(self, obs):
+        obs = obs.flatten()
         logits = obs.dot(self.W)
         values = obs.dot(self.V)
         return logits, values
@@ -116,7 +117,7 @@ class MLP(Model):
         cache = OrderedDict()
         for i in range(self.n_layer):
             W, b = self.params['W%d' % i], self.params['b%d' % i]
-            x, cache[i] = nn.mlp_fwd(x, W, b)
+            x, cache[i] = nn.mlp_fwd(x.reshape(x.shape[0], -1), W, b)
             if i < self.n_layer - 1:
                 x, cache['r%d' % i] = nn.relu_fwd(x)
         return x, cache
