@@ -58,6 +58,8 @@ class TestModel(unittest.TestCase):
             azero._model._sparse_update(obs, q, z)
             loss, _ = azero._model._loss(obs, q, z)
             self.assertLess(loss, last)
+        # We should have a better score than the correct answer
+        # This is due to cross-entropy loss being lower if we extremize
         true, _ = loss_fwd(np.c_[q, z], q, z, azero._model.c)
         self.assertLess(loss, np.sum(true))
 
