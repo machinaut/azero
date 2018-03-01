@@ -1,14 +1,17 @@
 #!/usr/bin/env python
 
+import random
 import numpy as np
 from collections import OrderedDict
+
 import nn
 from util import pairwise
 
 
 class Model:
     ''' Interface class for a model to be optimized by alphazero algorithm '''
-    def __init__(self, n_action, n_view, n_player):
+    def __init__(self, n_action, n_view, n_player, seed=None):
+        self.rs = np.random.RandomState(seed=seed)
         self.n_act = n_action
         self.n_obs = n_view + 1  # Includes player
         self.n_val = n_player
@@ -41,7 +44,16 @@ class Model:
         self._update(games)
 
     def _update(self, games):
-        raise NotImplementedError()
+        # Optionally overwrite this to get dense updates
+        # Default is to sample single data point from each game
+        # and pass them to _sparse_update().
+        s = sum([[(o, np.r_[p, z]) for o, p in t] for t, z in games], [])
+        d = [s[i] for i in self.rs.choice(len(s), len(games), replace=False)]
+        obs, y = (np.array(a) for a in zip(*d))  # inputs and outputs
+        self._sparse_update(obs, y)
+
+    def _sparse_update(self, obs, y):
+        raise NotImplementedError('Implement this or _update() in subclass')
 
 
 class Uniform(Model):
@@ -57,11 +69,10 @@ class Uniform(Model):
 
 class Linear(Model):
     ''' Simple linear model '''
-    def __init__(self, *args, seed=None, scale=0.01, **kwargs):
+    def __init__(self, *args, scale=0.01, **kwargs):
         super().__init__(*args, **kwargs)
-        rs = np.random.RandomState(seed)
-        self.W = rs.randn(self.n_obs, self.n_act) * scale
-        self.V = rs.randn(self.n_obs, self.n_val) * scale
+        self.W = self.rs.randn(self.n_obs, self.n_act) * scale
+        self.V = self.rs.randn(self.n_obs, self.n_val) * scale
 
     def _model(self, obs):
         logits = obs.dot(self.W)
@@ -85,12 +96,11 @@ class Memorize(Model):
 
 
 class MLP(Model):
-    def __init__(self, *args, seed=None, scale=0.01, hidden_dims=[10], c=0.5,
+    def __init__(self, *args, scale=0.01, hidden_dims=[10], c=0.5,
                  learning_rate=1e-3, **kwargs):
         super().__init__(*args, **kwargs)
         self.c = c  # Linear combination of loss terms (probs and values)
         self.learning_rate = learning_rate  # Step size of updates
-        self.rs = np.random.RandomState(seed)
         self.params = OrderedDict()
         all_dims = [self.n_obs] + hidden_dims + [self.n_act + self.n_val]
         for i, (in_dim, out_dim) in enumerate(pairwise(all_dims)):
@@ -126,6 +136,9 @@ class MLP(Model):
         dx = nn.loss_bak(np.ones(1), cache['loss'])
         grads = self._bak(dx, cache)
         return loss, grads
+
+    def _update(self, games):
+        pass
 
 
 models = [Uniform, Linear, Memorize, MLP]

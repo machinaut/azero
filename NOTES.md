@@ -40,6 +40,7 @@ Azero:
 - Find some way to incorporate the other players values into the MCTS selection
 
 Models:
+- Test overfitting
 - Add update and tests
 - Add RBF network
 - Add Boltzmann machine
