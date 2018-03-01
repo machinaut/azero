@@ -7,6 +7,7 @@ from itertools import product
 from model import models, MLP
 from game import games, MNOP
 from azero import AlphaZero
+from nn import loss_fwd
 from util import sample_logits, sample_games
 
 N = 10
@@ -57,6 +58,8 @@ class TestModel(unittest.TestCase):
             azero._model._sparse_update(obs, q, z)
             loss, _ = azero._model._loss(obs, q, z)
             self.assertLess(loss, last)
+        true, _ = loss_fwd(np.c_[q, z], q, z, azero._model.c)
+        self.assertLess(loss, np.sum(true))
 
 
 if __name__ == '__main__':
