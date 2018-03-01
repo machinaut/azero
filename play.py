@@ -23,7 +23,11 @@ def play(game):
             except ValueError:
                 pass
         state, player, outcome = game.step(state, player, action)
-    print('Outcome:\n', outcome)
+    if state is not None:
+        print('Final State:\n' + game.human(state))
+    print('Outcome:')
+    for i, val in enumerate(outcome):
+        print('  Player', i, ':', val)
 
 
 def main():
