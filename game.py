@@ -21,15 +21,12 @@ class Game:
         Raises AssertionError() if not!
         '''
         if outcome is None:
-            if isinstance(state, tuple):
-                assert len(state) == self.n_state
-            else:
-                assert state.size == self.n_state
             assert 0 <= player < self.n_player
             self._check(state, player)
         else:
+            outcome = np.asarray(outcome, dtype=float)
             assert player is None
-            assert len(outcome) == self.n_player
+            assert outcome.size == self.n_player
 
     def _check(self, state, player):
         pass  # Optional: Implement in subclass
@@ -42,6 +39,8 @@ class Game:
             outcome - tuple or array of rewards or None if game is not over
         '''
         state, player, outcome = self._start()
+        if outcome is not None:
+            outcome = np.asarray(outcome, dtype=float)
         self.check(state, player, outcome)
         return state, player, outcome
 
@@ -59,9 +58,12 @@ class Game:
             player - next player index or None if game is over
             outcome - tuple or array of rewards or None if game is not over
         '''
+        assert state is not None
         self.check(state, player)
         assert 0 <= action < self.n_action
         state, player, outcome = self._step(state, player, action)
+        if outcome is not None:
+            outcome = np.asarray(outcome, dtype=float)
         self.check(state, player, outcome)
         return state, player, outcome
 
@@ -94,7 +96,8 @@ class Game:
         '''
         self.check(state, player)
         view = self._view(state, player)
-        assert len(view) == self.n_view
+        view = np.asarray(view, dtype=float)
+        assert view.size == self.n_view
         return view
 
     def _view(self, state, player):

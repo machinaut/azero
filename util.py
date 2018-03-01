@@ -11,12 +11,6 @@ def pairwise(iterable):
     return zip(a, b)
 
 
-def view2obs(view, player):
-    full_view = view + (player,)
-    obs = np.array(full_view, dtype=float)
-    return obs
-
-
 def softmax(x, mask=1):
     x = np.asarray(x)
     e = np.exp(x - x.max()) * mask

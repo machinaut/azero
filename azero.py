@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
-from util import view2obs, softmax, sample_probs
+from util import softmax, sample_probs
 
 
 class Tree:
@@ -66,8 +66,7 @@ class AlphaZero:
         ''' Wrap the model to give the proper view and mask actions '''
         valid = self._game.valid(state, player)
         view = self._game.view(state, player)
-        obs = view2obs(view, player)
-        logits, value = self._model.model(obs)
+        logits, value = self._model.model(view)
         probs = softmax(logits, valid)
         return probs, value
 
@@ -114,7 +113,7 @@ class AlphaZero:
         while outcome is None:
             probs, _ = self.search(state, player)
             action = sample_probs(probs)
-            obs = view2obs(self._game.view(state, player), player)
+            obs = self._game.view(state, player)
             trajectory.append((obs, probs))
             state, player, outcome = self._game.step(state, player, action)
         return trajectory, outcome

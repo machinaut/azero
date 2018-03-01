@@ -12,7 +12,7 @@ class Model:
     def __init__(self, n_action, n_view, n_player, seed=None):
         self.rs = np.random.RandomState(seed=seed)
         self.n_act = n_action
-        self.n_obs = n_view + 1  # Includes player
+        self.n_obs = n_view
         self.n_val = n_player
         self.n_updates = 0
 
@@ -24,10 +24,13 @@ class Model:
             logits - action selection probability logits (pre-softmax)
             values - estimated sum of future rewards per player
         '''
-        assert obs.shape == (self.n_obs,)
+        obs = np.asarray(obs, dtype=float)
+        assert obs.size == self.n_obs
         logits, values = self._model(obs)
-        assert logits.shape == (self.n_act,)
-        assert values.shape == (self.n_val,)
+        logits = np.asarray(logits, dtype=float)
+        values = np.asarray(values, dtype=float)
+        assert logits.size == self.n_act
+        assert values.size == self.n_val
         return logits, values
 
     def _model(self, obs):
@@ -121,9 +124,9 @@ class MLP(Model):
     def _bak(self, dx, cache):
         grads = OrderedDict()
         for i in range(self.n_layer - 1, -1, -1):
-            grads['W%d' % i], grads['b%d' % i] = nn.mlp_bak(dx, cache[i])
             if i < self.n_layer - 1:
                 dx = nn.relu_bak(dx, cache['r%d' % i])
+            dx, grads['W%d' % i], grads['b%d' % i] = nn.mlp_bak(dx, cache[i])
         return grads
 
     def _loss(self, obs, q, outcome):
@@ -132,7 +135,7 @@ class MLP(Model):
         loss, cache['loss'] = nn.loss_fwd(x, q, outcome, self.c)
         dx = nn.loss_bak(np.ones(1), cache['loss'])
         grads = self._bak(dx, cache)
-        return loss, grads
+        return np.sum(loss), grads
 
     def _sparse_update(self, x, y):
         loss, grads = self._loss(x, y[:, :self.n_act], y[:, self.n_act])
