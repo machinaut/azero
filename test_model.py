@@ -51,9 +51,12 @@ class TestModel(unittest.TestCase):
         azero = AlphaZero.make(MNOP, MLP, seed=0)
         games = azero.play_multi()
         obs, q, z = sample_games(games, rs=azero.rs)
-        for _ in range(10):
+        loss, _ = azero._model._loss(obs, q, z)
+        for i in range(1000):
+            last = loss
+            azero._model._sparse_update(obs, q, z)
             loss, _ = azero._model._loss(obs, q, z)
-            print('loss', loss)
+            self.assertLess(loss, last)
 
 
 if __name__ == '__main__':

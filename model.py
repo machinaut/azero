@@ -52,7 +52,7 @@ class Model:
         obs, q, z = sample_games(games)
         self._sparse_update(obs, q, z)
 
-    def _sparse_update(self, obs, y):
+    def _sparse_update(self, obs, q, z):
         raise NotImplementedError('Implement this or _update() in subclass')
 
 
@@ -97,8 +97,8 @@ class Memorize(Model):
 
 
 class MLP(Model):
-    def __init__(self, *args, scale=0.01, hidden_dims=[10], c=0.5,
-                 learning_rate=1e-3, **kwargs):
+    def __init__(self, *args, scale=1e-4, hidden_dims=[10], c=0.5,
+                 learning_rate=1e-2, **kwargs):
         super().__init__(*args, **kwargs)
         self.c = c  # Linear combination of loss terms (probs and values)
         self.learning_rate = learning_rate  # Step size of updates
@@ -138,8 +138,10 @@ class MLP(Model):
         grads = self._bak(dx, cache)
         return np.sum(loss), grads
 
-    def _sparse_update(self, x, y):
-        loss, grads = self._loss(x, y[:, :self.n_act], y[:, self.n_act])
+    def _sparse_update(self, x, q, z):
+        loss, grads = self._loss(x, q, z)
+        for name in self.params.keys():
+            self.params[name] -= self.learning_rate * grads[name]
 
 
 models = [Uniform, Linear, Memorize, MLP]
