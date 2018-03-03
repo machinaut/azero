@@ -46,7 +46,7 @@ class AlphaZero:
                  c_puct=1.0,
                  tau=1.0,
                  eps=1e-6,
-                 sims_per_search=100):
+                 sims_per_search=1000):
         ''' Train a model to play a game with the AlphaZero algorithm '''
         self.rs = np.random.RandomState(seed)
         self._game = game
@@ -136,3 +136,16 @@ class AlphaZero:
             games = self.play_multi(n_games=n_games)
             loss = self._model.update(games)
             print('epoch', i, 'loss', loss)
+
+    def rollout(self):
+        ''' Rollout a game against self and return final state '''
+        state, player, outcome = self._game.start()
+        while outcome is None:
+            probs, _ = self.search(state, player)
+            action = sample_probs(probs, rs=self.rs)
+            state, player, outcome = self._game.step(state, player, action)
+        return state
+
+    def print_rollout(self):
+        ''' Print out final board state '''
+        print(self._game.human(self.rollout()))
