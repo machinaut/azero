@@ -42,7 +42,12 @@ Azero:
 Models:
 - Add update and tests
 - Add RBF network
-- Add MLP network
+- Add Boltzmann machine
+- Add random forests
+
+NN:
+- Add dropout
+- Add batchnorm
 
 Games:
 - make more TODO items

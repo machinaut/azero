@@ -286,7 +286,8 @@ class Modulo(Game):
 
 class Connect3(Game):
     ''' Connect 4, but on a 5x4 grid.
-        State is a 5x4 numpy array, with -1 as empty, 0 as player 0, and 1 as player 1.'''
+        State is a 5x4 numpy array, with -1 as empty, 0 as player 0,
+        and 1 as player 1.'''
     n_action = 5
     n_state = 20
     n_player = 2
@@ -309,8 +310,7 @@ class Connect3(Game):
         new_piece = np.where(state[action] == -1)[0][0]
         state[action, new_piece] = player
         # Check for victory
-        # Because I don't immediately see a simple way to check the whole board,
-        # I'm going to just check the ten possible wins that involve the new piece.
+        # TODO: make this better
         for poss in self.poss:
             if self._win(state, player, action, new_piece, poss[0], poss[1]):
                 return state, None, [(1, -1), (-1, 1)][player]
@@ -326,7 +326,8 @@ class Connect3(Game):
                 return False
             if not 0 <= new_piece + y_set[piece] < state.shape[1]:
                 return False
-            if state[action + x_set[piece], new_piece + y_set[piece]] != player:
+            if (state[action + x_set[piece], new_piece + y_set[piece]] !=
+                    player):
                 return False
         return True
 
@@ -458,7 +459,7 @@ class MNOP(Game):
 
 
 games = [Null, Binary, Flip, Count, Narrow,
-         Matching, Roshambo, Modulo, Nim, MNOP]
+         Matching, Roshambo, Modulo, MNOP]
 
 if __name__ == '__main__':
     from play import main  # noqa
