@@ -354,7 +354,8 @@ class Nim(Game):
         self.ps = len(s)  # number of piles
         self.mp = max(s) # largest pile
         self.n_player = self.p = p
-        self.n_action = self.n_state = self.n_view = self.ps * self.mp 
+        self.n_action = self.ps * self.mp 
+        self.n_state = self.n_view = self.ps * self.mp + 1
         self.st = (0,) * self.n_state 
         for i in range(self.ps):
             for j in range(s[i]):
@@ -366,6 +367,7 @@ class Nim(Game):
 
     def _step(self, state, player, action):
         assert state[action] == 1
+        assert action < len(state) -1 # didn't play action = player variable
         cap = (int(action / self.mp) + 1) * self.mp # beginning index of the next pile
         # remove all the stones until the next pile
         i = action 
@@ -376,18 +378,25 @@ class Nim(Game):
             outcome = [-1] * self.n_player
             outcome[player] = self.n_player - 1
             return None, None, tuple(outcome)
-        return state, (player + 1) % self.n_player, None
+        nextplayer = (player + 1) % self.n_player
+        return (state[:len(state)-1] + (nextplayer,)), nextplayer, None
 
     def _win(self, state, player, action):
         assert state[action] == 0 # Post state update
-        if state.count(1) == 0:
+        if state[:len(state)-1].count(1) == 0:
             return True
 
     def _valid(self, state, player):
-        return tuple(s == 1 for s in state)
+#        if state[len(state)-1] != player:
+#            return tuple(False for s in state)
+        return tuple(s == 1 for s in state[:len(state)-1]) # + (False,)
+
+    def _check(self, state, player):
+        assert state[len(state)-1] == player
 
     def human(self, state):
-        board = tuple(zip_longest(*([iter(state)] * self.mp)))
+        st = state[:len(state)-1]
+        board = tuple(zip_longest(*([iter(st)] * self.mp)))
         return '\n'.join(' '.join('%+2d' % s for s in row) for row in board)
 
 
