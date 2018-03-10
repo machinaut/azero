@@ -1,4 +1,15 @@
-# Notes from the papers:
+# NOTES
+
+## Stack of things to do
+
+- Conv2d Model
+- Loading saved models
+- faster rollouts
+    - virtual loss & batching
+    - numpy forward
+
+
+## Notes from the papers:
 
 virtual loss:
 - during parallel UCT (upper confidence bound tree search),
