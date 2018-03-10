@@ -116,9 +116,9 @@ class MLP(Model):
                  activation=tf.nn.relu,
                  learning_rate=0.001,
                  combination=0.5,
-                 step_update=3,
-                 step_trace=5,
-                 step_save=10,
+                 step_update=1,
+                 step_trace=1,
+                 step_save=1,
                  step_summary=1,
                  save_path=None,
                  log_dir='/tmp/azero',
@@ -154,14 +154,12 @@ class MLP(Model):
         os.makedirs(os.path.dirname(self.save_path), exist_ok=True)
 
         # Set to True when we're training
-        self.training = tf.placeholder_with_default(
-            tf.constant(False), (), name='training')
+        self.training = tf.placeholder(tf.bool, (), name='training')
         tf.add_to_collection('training', self.training)
 
         # input layer
         self.obs = tf.placeholder(tf.float32, [None, self.n_obs], name='obs')
         tf.add_to_collection('obs', self.obs)
-        drop_rate = tf.cast(self.training, tf.float32) * drop_rate
         net = tf.identity(self.obs)
         # hidden layers
         for i, units in enumerate(hidden_units):
@@ -171,6 +169,7 @@ class MLP(Model):
                 net = tf.layers.batch_normalization(net, training=self.training,
                                                     name='batchnorm%d' % i)
             net = tf.layers.dropout(net, rate=drop_rate,
+                                    training=self.training,
                                     name='dropout%d' % i)
             if activation is not None:
                 net = activation(net, name='activation%d' % i)
@@ -188,10 +187,12 @@ class MLP(Model):
 
         # Loss terms
         with tf.name_scope('loss'):
+            combination = tf.constant(combination, dtype=tf.float32, name='c')
             xent = tf.nn.softmax_cross_entropy_with_logits_v2(
                 labels=self.q, logits=self.p)
             mse = tf.reduce_mean(tf.square(self.v - self.z), axis=1)
-            self.loss = tf.reduce_mean(xent * combination + mse * (1 - combination))
+            self.loss = tf.reduce_mean(
+                xent * combination + mse * (1 - combination))
             tf.add_to_collection('loss', self.loss)
             tf.summary.scalar('loss', self.loss)
 
@@ -222,7 +223,8 @@ class MLP(Model):
 
     def _model(self, obs):
         assert obs.size == self.n_obs, 'bad obs size {}'.format(obs)
-        feed_dict = {self.obs: obs.flatten()[None, :]}  # Add batch dimension
+        feed_dict = {self.obs: obs.flatten()[None, :],  # Add batch dimension
+                     self.training: False}
         p, v = self.sess.run([self.p, self.v], feed_dict=feed_dict)
         return p[0], v[0]  # Remove batch dimension
 
@@ -246,14 +248,15 @@ class MLP(Model):
             feed_dict = {self.obs: obs.reshape(obs.shape[0], -1), self.q: q,
                          self.z: z, self.training: True}
             if i % self.step_summary == self.step_summary - 1:
-                summary, _ = self.sess.run([self.merged, self.train],
-                                           feed_dict=feed_dict,
-                                           options=run_options,
-                                           run_metadata=run_metadata)
+                summary, loss, _ = self.sess.run([self.merged, self.loss,
+                                                  self.train],
+                                                 feed_dict=feed_dict,
+                                                 options=run_options,
+                                                 run_metadata=run_metadata)
                 self.writer.add_summary(summary, global_step=i)
             else:
-                self.sess.run(self.train, feed_dict=feed_dict,
-                              options=run_options, run_metadata=run_metadata)
+                loss, _, = self.sess.run([self.loss, self.train], feed_dict=feed_dict,
+                                         options=run_options, run_metadata=run_metadata)
 
             # If we generated a trace, write it out
             if run_metadata is not None:
