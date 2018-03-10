@@ -98,7 +98,7 @@ class AlphaZero:
             sims_per_search = self.sims_per_search
         prior, _ = self.model(state, player)
         tree = Tree(prior, self.c_puct)
-        for _ in range(sims_per_search):
+        for i in range(sims_per_search):
             self.simulate(state, player, tree)
         pi = np.power(tree.N, 1 / self.tau)
         probs = pi / np.sum(pi)
@@ -126,7 +126,11 @@ class AlphaZero:
         Play multiple whole games, return a list of game results.
         See play() for result of a single game.
         '''
-        return [self.play() for _ in range(n_games)]
+        games = []
+        for i in range(n_games):
+            print('playing game', i)
+            games.append(self.play())
+        return games
 
     def train(self, n_epochs=10, n_games=10):
         '''
@@ -149,3 +153,10 @@ class AlphaZero:
     def print_rollout(self):
         ''' Print out final board state '''
         print(self._game.human(self.rollout()))
+
+
+if __name__ == '__main__':
+    from game import MNOP  # noqa
+    from model import MLP  # noqa
+    azero = AlphaZero.make(MNOP, MLP)
+    azero.train(n_epochs=3, n_games=5)
