@@ -2,6 +2,7 @@
 
 import random
 import unittest
+import numpy as np
 from collections import defaultdict
 from itertools import product
 from util import sample_logits
@@ -20,18 +21,6 @@ class TestGames(unittest.TestCase):
             for _ in range(N):
                 state, player, outcome = game.start()
                 while outcome is None:
-                    # Verify incorrect length state asserts valid()
-                    if len(state) > 1:
-                        with self.assertRaises(AssertionError):
-                            game.valid(state[:-1], player)
-                    with self.assertRaises(AssertionError):
-                        game.valid(state + (0,), player)
-                    # Verify incorrect length state asserts view()
-                    if len(state) > 1:
-                        with self.assertRaises(AssertionError):
-                            game.view(state[:-1], player)
-                    with self.assertRaises(AssertionError):
-                        game.view(state + (0,), player)
                     # Verify incorrect player asserts valid()
                     with self.assertRaises(AssertionError):
                         game.valid(state, player + 1)
@@ -50,12 +39,6 @@ class TestGames(unittest.TestCase):
                     self.assertGreater(sum(valid), 0)
                     # Draw a random action, maybe invalid
                     action = random.randrange(game.n_action)
-                    # Verify that incorrect length state asserts step()
-                    if len(state) > 1:
-                        with self.assertRaises(AssertionError):
-                            game.step(state[:-1], player, action)
-                    with self.assertRaises(AssertionError):
-                        game.step(state + (0,), player, action)
                     # Verify that out-of-range action asserts step()
                     with self.assertRaises(AssertionError):
                         game.step(state, player, -1)
@@ -74,7 +57,6 @@ class TestGames(unittest.TestCase):
                             game.step(state, player, action)
                 # End of game checks
                 self.assertIsNone(player)
-                self.assertIsNone(state)
 
     def check_trajectory(self, game, traj, out):
         state, player, outcome = game.start()
@@ -82,7 +64,7 @@ class TestGames(unittest.TestCase):
             self.assertIsNone(outcome)
             state, player, outcome = game.step(state, player, action)
         self.assertIsNotNone(outcome)
-        self.assertEqual(outcome, out)
+        np.testing.assert_equal(outcome, out)
 
     def test_trajectories(self):
         self.check_trajectory(Null(), (), (0,))
@@ -201,9 +183,10 @@ class TestGames(unittest.TestCase):
                 state, player, outcome = game.start()
                 while outcome is None:
                     valid = game.valid(state, player)
-                    view = game.view(state, player)
-                    state_valid_view.append((state, valid, view))
-                    state_player.append((state, player))
+                    view = game.view(state, player).tostring()
+                    tstate = tuple(state)
+                    state_valid_view.append((tstate, valid, view))
+                    state_player.append((tstate, player))
                     action = sample_logits((0,) * len(valid), valid)
                     state, player, outcome = game.step(state, player, action)
             self.check_conditional_independence(state_valid_view)

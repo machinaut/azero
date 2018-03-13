@@ -1,4 +1,15 @@
-# Notes from the papers:
+# NOTES
+
+## Stack of things to do
+
+- Conv2d Model
+- Loading saved models
+- faster rollouts
+    - virtual loss & batching
+    - numpy forward
+
+
+## Notes from the papers:
 
 virtual loss:
 - during parallel UCT (upper confidence bound tree search),
@@ -40,6 +51,8 @@ Azero:
 - Find some way to incorporate the other players values into the MCTS selection
 
 Models:
+- Load models from files
+- Test overfitting
 - Add update and tests
 - Add RBF network
 - Add Boltzmann machine

@@ -4,9 +4,11 @@ import random
 import unittest
 import numpy as np
 from itertools import product
-from model import models
-from game import games
-from util import view2obs, sample_logits
+from model import models, MLP
+from game import games, MNOP
+from azero import AlphaZero
+from nn import loss_fwd
+from util import sample_logits, sample_games
 
 N = 10
 
@@ -19,8 +21,7 @@ class TestModel(unittest.TestCase):
                 model = model_cls(game.n_action, game.n_view, game.n_player)
                 state, player, outcome = game.start()
                 while outcome is None:
-                    view = game.view(state, player)
-                    obs = view2obs(view, player)
+                    obs = game.view(state, player)
                     valid = game.valid(state, player)
                     logits, _ = model.model(obs)
                     action = sample_logits(logits, valid)
@@ -35,10 +36,10 @@ class TestModel(unittest.TestCase):
                 model = model_cls(game.n_action, game.n_view, game.n_player)
                 state, player, outcome = game.start()
                 while outcome is None:
-                    view = game.view(state, player)
-                    obs = view2obs(view, player)
-                    bad_obs = obs.copy()
-                    bad_obs[random.randrange(len(bad_obs))] = np.nan
+                    obs = game.view(state, player)
+                    bad_obs = obs.copy().flatten()
+                    bad_obs[random.randrange(model.n_obs)] = np.nan
+                    bad_obs = bad_obs.reshape(obs.shape)
                     bad_logits, bad_value = model.model(bad_obs)
                     assert np.isnan(bad_value).all()
                     assert np.isnan(bad_logits).all()
@@ -46,6 +47,21 @@ class TestModel(unittest.TestCase):
                     logits, _ = model.model(obs)
                     action = sample_logits(logits, valid)
                     state, player, outcome = game.step(state, player, action)
+
+    def test_mlp_overfit(self):
+        azero = AlphaZero.make(MNOP, MLP, seed=0)
+        games = azero.play_multi()
+        obs, q, z = sample_games(games, rs=azero.rs)
+        loss, _ = azero._model._loss(obs, q, z)
+        for i in range(1000):
+            last = loss
+            azero._model._sparse_update(obs, q, z)
+            loss, _ = azero._model._loss(obs, q, z)
+            self.assertLess(loss, last)
+        # We should have a better score than the correct answer
+        # This is due to cross-entropy loss being lower if we extremize
+        true, _ = loss_fwd(np.c_[q, z], q, z, azero._model.c)
+        self.assertLess(loss, np.mean(true))
 
 
 if __name__ == '__main__':

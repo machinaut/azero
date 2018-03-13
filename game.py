@@ -23,15 +23,12 @@ class Game:
         Raises AssertionError() if not!
         '''
         if outcome is None:
-            if isinstance(state, tuple):
-                assert len(state) == self.n_state
-            else:
-                assert state.size == self.n_state
             assert 0 <= player < self.n_player
             self._check(state, player)
         else:
+            outcome = np.asarray(outcome, dtype=float)
             assert player is None
-            assert len(outcome) == self.n_player
+            assert outcome.size == self.n_player
 
     def _check(self, state, player):
         pass  # Optional: Implement in subclass
@@ -44,6 +41,8 @@ class Game:
             outcome - tuple or array of rewards or None if game is not over
         '''
         state, player, outcome = self._start()
+        if outcome is not None:
+            outcome = np.asarray(outcome, dtype=float)
         self.check(state, player, outcome)
         return state, player, outcome
 
@@ -61,9 +60,12 @@ class Game:
             player - next player index or None if game is over
             outcome - tuple or array of rewards or None if game is not over
         '''
+        assert state is not None
         self.check(state, player)
         assert 0 <= action < self.n_action
         state, player, outcome = self._step(state, player, action)
+        if outcome is not None:
+            outcome = np.asarray(outcome, dtype=float)
         self.check(state, player, outcome)
         return state, player, outcome
 
@@ -96,7 +98,8 @@ class Game:
         '''
         self.check(state, player)
         view = self._view(state, player)
-        assert len(view) == self.n_view
+        view = np.asarray(view, dtype=float)
+        assert view.size == self.n_view
         return view
 
     def _view(self, state, player):
@@ -411,7 +414,8 @@ class MNOP(Game):
         self.n = n  # board height
         self.o = o  # win length
         self.n_player = self.p = p
-        self.n_action = self.n_state = self.n_view = m * n
+        self.n_action = self.n_state = m * n
+        self.n_view = m * n * p
 
     def _start(self):
         return (-1,) * self.n_state, 0, None
@@ -420,11 +424,11 @@ class MNOP(Game):
         assert state[action] == -1
         state = state[:action] + (player,) + state[action + 1:]
         if self._win(state, player, action):
-            outcome = [-1] * self.n_player
+            outcome = -np.ones(self.n_player)
             outcome[player] = self.n_player - 1
-            return None, None, tuple(outcome)
+            return state, None, outcome
         if state.count(-1) == 0:
-            return None, None, (0,) * self.n_player
+            return state, None, (0,) * self.n_player
         return state, (player + 1) % self.n_player, None
 
     def _win(self, state, player, action):
@@ -450,12 +454,23 @@ class MNOP(Game):
     def _valid(self, state, player):
         return tuple(s == -1 for s in state)
 
+    def _view(self, state, player):
+        view = np.zeros((self.n_player, self.m, self.n))
+        for i in range(self.m):
+            for j in range(self.n):
+                k = state[i * self.m + j]
+                if k >= 0:
+                    p = (k - player) % self.n_player
+                    view[p, i, j] = 1
+        return view
+
     def _check(self, state, player):
         assert player == (len(state) - state.count(-1)) % self.n_player
 
     def human(self, state):
-        board = tuple(zip_longest(*([iter(state)] * self.m)))
-        return '\n'.join(' '.join('%+2d' % s for s in row) for row in board)
+        str_state = (str(i) if i >= 0 else '-' for i in state)
+        board = tuple(zip_longest(*([iter(str_state)] * self.m)))
+        return '\n'.join(' '.join(row) for row in board)
 
 
 games = [Null, Binary, Flip, Count, Narrow,
