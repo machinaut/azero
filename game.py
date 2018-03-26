@@ -476,14 +476,15 @@ class MNOP(Game):
 class Checkers(Game):
     ''' Checkers with multiple board sizes. '''
     
-    def __init__(self, size=4, *args, **kwargs):
+    def __init__(self, size=8, *args, **kwargs):
         super().__init__(*args, **kwargs)
         assert size % 2 == 0 # Only allowing even checkers boards
         self.size = size
         self.n_player = 2
         self.board_size = size * size // 2
         self.n_action = self.n_view = self.board_size * 4
-        self.n_state = self.board_size + 2
+        self.n_state = self.board_size + 3
+        self.max_move = self.size ** 3
         self.moves_fwd = defaultdict(list)
         self.jumps_fwd = defaultdict(list)
         self.moves_bak = defaultdict(list)
@@ -502,88 +503,184 @@ class Checkers(Game):
                 #moves_bak
                 if row > 0:
                     if col == 0:
-                        self.moves_bak[loc].append((self.board_size*3+loc,loc+row_size))
+                        self.moves_bak[loc].append((self.board_size*3+loc,loc-row_size))
                     else:
-                        self.moves_bak[loc].append((self.board_size*3+loc,loc+row_size))
-                        self.moves_bak[loc].append((self.board_size*2+loc,loc+row_size-1))
+                        self.moves_bak[loc].append((self.board_size*3+loc,loc-row_size))
+                        self.moves_bak[loc].append((self.board_size*2+loc,loc-row_size-1))
             if row % 2 == 1: # and row < self.size-1
                 #moves_fwd
                 if row < self.size - 1:
-                    if col == 0:
+                    if col == row_size - 1:
                         self.moves_fwd[loc].append((loc,loc+row_size))
                     else:
                         self.moves_fwd[loc].append((loc,loc+row_size))
                         self.moves_fwd[loc].append((self.board_size+loc,loc+row_size+1))
                 #moves_bak
-                if col == 0: #can always move back if row is odd
-                    self.moves_bak[loc].append((loc,loc+row_size))
+                if col == row_size - 1: #can always move back if row is odd
+                    self.moves_bak[loc].append((self.board_size*2+loc,loc-row_size))
                 else:
-                    self.moves_bak[loc].append((loc,loc+row_size))
-                    self.moves_bak[loc].append((self.board_size+loc,loc+row_size+1))
+                    self.moves_bak[loc].append((self.board_size*2+loc,loc-row_size))
+                    self.moves_bak[loc].append((self.board_size*3+loc,loc-row_size+1))
             #jumps_fwd
             if row < self.size - 2:
                 if col > 0:
-                    self.jumps_fwd[loc].append((loc,loc+row_size,loc+2*row_size-1))
+                    self.jumps_fwd[loc].append((loc,loc+row_size - 1 + row % 2,loc+2*row_size-1))
                 if col < row_size - 1:
-                    self.jumps_fwd[loc].append((self.board_size+loc,loc+row_size,loc+2*row_size-1))
+                    self.jumps_fwd[loc].append((self.board_size + loc, loc + row_size + row % 2, loc + 2 * row_size + 1))
             #jumps_bak
             if row > 1:
                 if col > 0:
-                    self.jumps_bak[loc].append((2*self.board_size+loc,loc-row_size,loc-2*row_size-1))
+                    self.jumps_bak[loc].append((2 * self.board_size + loc, loc - row_size - 1 + row % 2, loc - 2 * row_size - 1))
                 if col < row_size - 1:
-                    self.jumps_bak[loc].append((3*self.board_size+loc,loc-row_size,loc-2*row_size+1))
+                    self.jumps_bak[loc].append((3 * self.board_size + loc, loc - row_size + row % 2, loc - 2 * row_size + 1))
 
     def _start(self):
         num_pieces = self.size // 2 * ( self.size // 2 - 1 )
-        return (1,) * num_pieces + (0,)* self.size + (-1,) * num_pieces + (0,-1), 0, None
+        return (1,) * num_pieces + (0,)* self.size + (-1,) * num_pieces + (0, 0, -1), 0, None
 
     def _step(self, state, player, action):
-        piece = action % self.board_size
+        state = list(state)
+        state[-3] += 1
+        if state[-3] == self.max_move:
+            return (tuple(state), None, [0, 0])
+        move, piece = divmod(action, self.board_size)
+        poss_actions = []
+        if player == 1:
+            move = 3 - move
+            piece = self.board_size - piece - 1
+            #action = move * self.board_size + piece
+        if player == 0 or abs(state[piece]) == 2:
+            poss_actions.extend([x[0] for x in self.moves_fwd[piece]])
+            poss_actions.extend([x[0] for x in self.jumps_fwd[piece]])
+        if player == 1 or abs(state[piece]) == 2:
+            poss_actions.extend([x[0] for x in self.jumps_bak[piece]])
+            poss_actions.extend([x[0] for x in self.moves_bak[piece]])
+        #valid = self.valid(state, player)
+        #sparse = tuple(i for i in range(len(valid)) if valid[i])
+        #assert action in sparse
+        #assert action in poss_actions, "{} {} {} {}".format(action, poss_actions, sparse, state)
+        #if action not in poss_actions:
+        #    import ipdb; ipdb.set_trace()
+        enemies = [-1, -2] if player == 0 else [1, 2]
+        friendlies = [-1, -2] if player == 1 else [1, 2]
+        assert state[piece] in friendlies
+        row_size = self.size // 2
+        row, col = divmod(piece, row_size)
+        dx = move % 2 + row % 2 - 1 
+        dy = row_size if move < 2 else -row_size
+        dest = piece + dx + dy
+        if state[dest] == 0: #Move
+            state[dest] = state[piece] # Does it get kinged?
+            if (row == 1 and player == 1) or (row == self.size - 2 and player == 0):
+                state[dest] = friendlies[-1]
+            state[piece] = 0
+            state[-1] = -1
+            state[-2] = (player + 1) % 2
+            return (tuple(state), state[-2], None)
+        assert state[dest] in enemies #Jump
+        state[dest] = 0
+        land = piece + 2 * dy + (move % 2) * 2 - 1
+        assert state[land] == 0
+        state[land] = state[piece]
+        state[piece] = 0
+        #Can you jump again?
+        can_jump = False
+        if player == 0 or abs(state[land]) == 2:
+            for _, enemy_idx, land_idx in self.jumps_fwd[land]:
+                if state[enemy_idx] in enemies and state[land_idx] == 0:
+                    can_jump = True
+                    break
+        if not can_jump and (player == 1 or abs(state[land]) == 2):
+            for _, enemy_idx, land_idx in self.jumps_bak[land]:
+                if state[enemy_idx] in enemies and state[land_idx] == 0:
+                    can_jump = True
+                    break
+        if can_jump:
+            state[-1] = land
+            state[-2] = player
+            return (tuple(state), state[-2], None)
+        #Did you promote?
+        if (row == 2 and player == 1) or (row == self.size - 3 and player == 0):
+            state[land] = friendlies[-1]
+        #Did you win?
+        enemy_count = 0
+        for enemy in enemies:
+            enemy_count += state[:-2].count(enemy)
+        if enemy_count == 0:
+            return (tuple(state), None, [[1, -1], [-1, 1]][player])
+        state[-1] = -1
+        state[-2] = (player + 1) % 2
+        return (tuple(state), state[-2], None)
+        
+        
 
     def _valid(self, state, player):
         actions = [False] * self.n_action
-        board = state[:-2] if player == 0 else state[:-2][::-1]
+        board = state[:-3] if player == 0 else state[:-3][::-1]
         
         enemies = [-1, -2] if player == 0 else [1, 2]
         friendlies = [-1, -2] if player == 1 else [1, 2]
         if state[-1] != -1:
             piece = state[-1] if player == 0 else self.board_size - state[-1] - 1
-            for action_idx, (enemy_idx, land_idx) in self.jumps_fwd[piece]:
+            for action_idx, enemy_idx, land_idx in self.jumps_fwd[piece]:
                 if board[land_idx] == 0 and board[enemy_idx] in enemies:
                     actions[action_idx] = True
             if abs(board[piece]) == 2:            
-                for action_idx, (enemy_idx, land_idx) in self.jumps_bak[piece]:
+                for action_idx, enemy_idx, land_idx in self.jumps_bak[piece]:
                     if board[land_idx] == 0 and board[enemy_idx] in enemies:
                         actions[action_idx] = True            
         else:
             for (idx, piece) in enumerate(board):
                 if piece in friendlies:
-                    for action_idx, land_idx in self.moves_fwd[idx]:
-                        if board[land_idx] == 0:
-                            actions[action_idx] = True
                     for action_idx, enemy_idx, land_idx in self.jumps_fwd[idx]:
                         if board[land_idx] == 0 and board[enemy_idx] in enemies:
                             actions[action_idx] = True
-                    if abs(piece) == 2:                    
-                        for action_idx, land_idx in self.moves_bak[idx]:
-                            if board[land_idx] == 0:
-                                actions[action_idx] = True
-                        for action_idx, enemy_idx, land_idx in self.jumps_bak(idx):
+                    if abs(piece) == 2:     
+                        for action_idx, enemy_idx, land_idx in self.jumps_bak[idx]:
                             if board[land_idx] == 0 and board[enemy_idx] in enemies:
                                 actions[action_idx] = True
+            if sum(actions) == 0:
+                for (idx, piece) in enumerate(board):
+                    if piece in friendlies:
+                        for action_idx, land_idx in self.moves_fwd[idx]:
+                            if board[land_idx] == 0:
+                                actions[action_idx] = True
+                        if abs(piece) == 2:                    
+                            for action_idx, land_idx in self.moves_bak[idx]:
+                                if board[land_idx] == 0:
+                                    actions[action_idx] = True
         return tuple(actions)
 
     def _view(self, state, player):
         view = np.zeros((4, self.board_size))
         if player == 0:
             for i, piece_type in enumerate([1, 2, -1, -2]):
-                for j, piece in enumerate(state[:-2]):
+                for j, piece in enumerate(state[:-3]):
                     view[i, j] = piece == piece_type
         else:
             for i, piece_type in enumerate([-1, -2, 1, 2]):
-                for j, piece in enumerate(state[:-2]):
+                for j, piece in enumerate(state[:-3]):
                     view[i, self.board_size - j - 1] = piece == piece_type
         return view
+        
+    def _check(self, state, player):
+        assert player == state[-2]
+
+    def human(self, state, player):
+        display = ['X', 'x', '-', 'o', 'O'] if player == 0 else ['O', 'o', '-', 'x', 'X']
+        board = state[:-3] if player == 0 else state[:-3][::-1]
+        str_state = [display[i+2] for i in board]
+        s = '*'+self.size*'-'+'*\n'
+        for row in range(self.size):
+            s += '|' if row % 2 == 0 else '| '
+            r = []
+            for col in range(self.size // 2):
+                loc = row*(self.size // 2) + col
+                r.append(str_state[loc])
+            s += ' '.join(r)
+            s += ' |\n' if row % 2 == 0 else '|\n'
+        s += '*'+self.size*'-'+'*\n'
+        return s
 
 games = [Null, Binary, Flip, Count, Narrow,
          Matching, Roshambo, Modulo, MNOP, Checkers]

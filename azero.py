@@ -81,16 +81,18 @@ class AlphaZero:
             values - player-length list of values
         '''
         valid = self._game.valid(state, player)
-        action, child = tree.select(valid)
-        if child is None:
-            prior, values = self.model(state, player)
-            tree.leaf(action, prior)
-        else:
-            state, next_player, values = self._game.step(state, player, action)
-            if values is None:
-                values = self.simulate(state, next_player, child)
-        tree.backup(action, values[player])
-        return values
+        if sum(valid):
+            action, child = tree.select(valid)
+            if child is None:
+                prior, values = self.model(state, player)
+                tree.leaf(action, prior)
+            else:
+                state, next_player, values = self._game.step(state, player, action)
+                if values is None:
+                    values = self.simulate(state, next_player, child)
+            tree.backup(action, values[player])
+            return values
+        return [(-1, 1), (1, -1)][player]  # XXX hardcode 2 player loss
 
     def search(self, state, player, sims_per_search=None):
         ''' MCTS to generate move probabilities for a state '''
@@ -156,7 +158,7 @@ class AlphaZero:
 
 
 if __name__ == '__main__':
-    from game import MNOP  # noqa
+    from game import Checkers  # noqa
     from model import MLP  # noqa
-    azero = AlphaZero.make(MNOP, MLP)
+    azero = AlphaZero.make(Checkers, MLP)
     azero.train(n_epochs=3, n_games=5)

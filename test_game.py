@@ -8,7 +8,7 @@ from itertools import product
 from util import sample_logits
 from game import (games, Game,
                   Null, Binary, Flip, Count, Narrow, Matching, Roshambo,
-                  Modulo, Connect3, MNOP)
+                  Modulo, Connect3, MNOP, Checkers)
 
 N = 100
 
@@ -53,7 +53,7 @@ class TestGames(unittest.TestCase):
                     if valid[action]:
                         state, player, outcome = game.step(state, player, action)
                     else:  # Verify that invalid action raises assert
-                        with self.assertRaises(AssertionError):
+                        with self.assertRaises(AssertionError, msg='{} {} {}'.format(state, player, action)):
                             game.step(state, player, action)
                 # End of game checks
                 self.assertIsNone(player)
@@ -191,6 +191,42 @@ class TestGames(unittest.TestCase):
                     state, player, outcome = game.step(state, player, action)
             self.check_conditional_independence(state_valid_view)
             self.check_dependence(state_player)
+    
+    def test_checkers(self):
+        game = Checkers()
+        #import ipdb; ipdb.set_trace()
+        self.assertEqual(game.jumps_fwd[0],[(8,2,5)])
+        self.assertEqual(game.jumps_fwd[1],[(1,2,4)])
+        self.assertEqual(game.jumps_fwd[2],[(10,5,7)])
+        self.assertEqual(game.jumps_fwd[3],[(3,5,6)])
+        self.assertEqual(game.jumps_fwd[4],[])
+        self.assertEqual(game.jumps_fwd[5],[])
+        self.assertEqual(game.jumps_fwd[6],[])
+        self.assertEqual(game.jumps_fwd[7],[])
+        self.assertEqual(game.moves_fwd[0],[(8,2)])
+        self.assertEqual(game.moves_fwd[1],[(9,3),(1,2)])
+        self.assertEqual(game.moves_fwd[2],[(2,4),(10,5)])
+        self.assertEqual(game.moves_fwd[3],[(3,5)])
+        self.assertEqual(game.moves_fwd[4],[(12,6)])
+        self.assertEqual(game.moves_fwd[5],[(13,7),(5,6)])
+        self.assertEqual(game.moves_fwd[6],[])
+        self.assertEqual(game.moves_fwd[7],[])
+        self.assertEqual(game.moves_bak[0],[])
+        self.assertEqual(game.moves_bak[1],[])
+        self.assertEqual(game.moves_bak[2],[(18,0),(26,1)])
+        self.assertEqual(game.moves_bak[3],[(19,1)])
+        self.assertEqual(game.moves_bak[4],[(28,2)])
+        self.assertEqual(game.moves_bak[5],[(29,3),(21,2)])
+        self.assertEqual(game.moves_bak[6],[(22,4),(30,5)])
+        self.assertEqual(game.moves_bak[7],[(23,5)])
+        self.assertEqual(game.jumps_bak[0],[])
+        self.assertEqual(game.jumps_bak[1],[])
+        self.assertEqual(game.jumps_bak[2],[])
+        self.assertEqual(game.jumps_bak[3],[])
+        self.assertEqual(game.jumps_bak[4],[(28,2,1)])
+        self.assertEqual(game.jumps_bak[5],[(21,2,0)])
+        self.assertEqual(game.jumps_bak[6],[(30,5,3)])
+        self.assertEqual(game.jumps_bak[7],[(23,5,2)])
 
 
 if __name__ == '__main__':

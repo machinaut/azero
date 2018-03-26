@@ -10,7 +10,8 @@ def play(game):
     print('Docstring:\n', game.__doc__)
     state, player, outcome = game.start()
     while outcome is None:
-        print('State:\n' + game.human(state))
+        print('Human:\n' + game.human(state, player))
+        print('State:\n' + str(state) + '\n')
         print('View:\n', game.view(state, player))
         print('Player:\n', player)
         valid = game.valid(state, player)
@@ -24,7 +25,7 @@ def play(game):
                 pass
         state, player, outcome = game.step(state, player, action)
     if state is not None:
-        print('Final State:\n' + game.human(state))
+        print('Final State:\n' + game.human(state, player))
     print('Outcome:')
     for i, val in enumerate(outcome):
         print('  Player', i, ':', val)
