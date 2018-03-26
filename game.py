@@ -482,7 +482,8 @@ class Checkers(Game):
         self.size = size
         self.n_player = 2
         self.board_size = size * size // 2
-        self.n_action = self.n_view = self.board_size * 4
+        self.n_action = self.board_size * 4
+        self.n_view = self.board_size * 5
         self.n_state = self.board_size + 3
         self.max_move = self.size ** 3
         self.moves_fwd = defaultdict(list)
@@ -652,15 +653,19 @@ class Checkers(Game):
         return tuple(actions)
 
     def _view(self, state, player):
-        view = np.zeros((4, self.board_size))
+        view = np.zeros((5, self.board_size))
         if player == 0:
             for i, piece_type in enumerate([1, 2, -1, -2]):
                 for j, piece in enumerate(state[:-3]):
                     view[i, j] = piece == piece_type
+            if state[-1] != -1:
+                view[4,state[-1]] = 1
         else:
             for i, piece_type in enumerate([-1, -2, 1, 2]):
                 for j, piece in enumerate(state[:-3]):
                     view[i, self.board_size - j - 1] = piece == piece_type
+            if state[-1] != -1:
+                view[4,self.board_size - state[-1] - 1] = 1
         return view
         
     def _check(self, state, player):
