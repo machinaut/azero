@@ -5,6 +5,7 @@ import numpy as np
 from itertools import zip_longest
 ''' for Nim  '''
 from functools import reduce
+from collections import defaultdict
 
 
 class Game:
@@ -471,10 +472,121 @@ class MNOP(Game):
         str_state = (str(i) if i >= 0 else '-' for i in state)
         board = tuple(zip_longest(*([iter(str_state)] * self.m)))
         return '\n'.join(' '.join(row) for row in board)
+        
+class Checkers(Game):
+    ''' Checkers with multiple board sizes. '''
+    
+    def __init__(self, size=4, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        assert size % 2 == 0 # Only allowing even checkers boards
+        self.size = size
+        self.n_player = 2
+        self.board_size = size * size // 2
+        self.n_action = self.n_view = self.board_size * 4
+        self.n_state = self.board_size + 2
+        self.moves_fwd = defaultdict(list)
+        self.jumps_fwd = defaultdict(list)
+        self.moves_bak = defaultdict(list)
+        self.jumps_bak = defaultdict(list)
+        row_size = self.size // 2
+        for loc in range(self.board_size):
+            row, col = divmod(loc, row_size)
+            #moves
+            if row % 2 == 0: # and row < self.size-1
+                #moves_fwd
+                if col == 0: #can always move forward if row is even
+                    self.moves_fwd[loc].append((self.board_size+loc,loc+row_size))
+                else:
+                    self.moves_fwd[loc].append((self.board_size+loc,loc+row_size))
+                    self.moves_fwd[loc].append((loc,loc+row_size-1))
+                #moves_bak
+                if row > 0:
+                    if col == 0:
+                        self.moves_bak[loc].append((self.board_size*3+loc,loc+row_size))
+                    else:
+                        self.moves_bak[loc].append((self.board_size*3+loc,loc+row_size))
+                        self.moves_bak[loc].append((self.board_size*2+loc,loc+row_size-1))
+            if row % 2 == 1: # and row < self.size-1
+                #moves_fwd
+                if row < self.size - 1:
+                    if col == 0:
+                        self.moves_fwd[loc].append((loc,loc+row_size))
+                    else:
+                        self.moves_fwd[loc].append((loc,loc+row_size))
+                        self.moves_fwd[loc].append((self.board_size+loc,loc+row_size+1))
+                #moves_bak
+                if col == 0: #can always move back if row is odd
+                    self.moves_bak[loc].append((loc,loc+row_size))
+                else:
+                    self.moves_bak[loc].append((loc,loc+row_size))
+                    self.moves_bak[loc].append((self.board_size+loc,loc+row_size+1))
+            #jumps_fwd
+            if row < self.size - 2:
+                if col > 0:
+                    self.jumps_fwd[loc].append((loc,loc+row_size,loc+2*row_size-1))
+                if col < row_size - 1:
+                    self.jumps_fwd[loc].append((self.board_size+loc,loc+row_size,loc+2*row_size-1))
+            #jumps_bak
+            if row > 1:
+                if col > 0:
+                    self.jumps_bak[loc].append((2*self.board_size+loc,loc-row_size,loc-2*row_size-1))
+                if col < row_size - 1:
+                    self.jumps_bak[loc].append((3*self.board_size+loc,loc-row_size,loc-2*row_size+1))
 
+    def _start(self):
+        num_pieces = self.size // 2 * ( self.size // 2 - 1 )
+        return (1,) * num_pieces + (0,)* self.size + (-1,) * num_pieces + (0,-1), 0, None
+
+    def _step(self, state, player, action):
+        piece = action % self.board_size
+
+    def _valid(self, state, player):
+        actions = [False] * self.n_action
+        board = state[:-2] if player == 0 else state[:-2][::-1]
+        
+        enemies = [-1, -2] if player == 0 else [1, 2]
+        friendlies = [-1, -2] if player == 1 else [1, 2]
+        if state[-1] != -1:
+            piece = state[-1] if player == 0 else self.board_size - state[-1] - 1
+            for action_idx, (enemy_idx, land_idx) in self.jumps_fwd[piece]:
+                if board[land_idx] == 0 and board[enemy_idx] in enemies:
+                    actions[action_idx] = True
+            if abs(board[piece]) == 2:            
+                for action_idx, (enemy_idx, land_idx) in self.jumps_bak[piece]:
+                    if board[land_idx] == 0 and board[enemy_idx] in enemies:
+                        actions[action_idx] = True            
+        else:
+            for (idx, piece) in enumerate(board):
+                if piece in friendlies:
+                    for action_idx, land_idx in self.moves_fwd[idx]:
+                        if board[land_idx] == 0:
+                            actions[action_idx] = True
+                    for action_idx, enemy_idx, land_idx in self.jumps_fwd[idx]:
+                        if board[land_idx] == 0 and board[enemy_idx] in enemies:
+                            actions[action_idx] = True
+                    if abs(piece) == 2:                    
+                        for action_idx, land_idx in self.moves_bak[idx]:
+                            if board[land_idx] == 0:
+                                actions[action_idx] = True
+                        for action_idx, enemy_idx, land_idx in self.jumps_bak(idx):
+                            if board[land_idx] == 0 and board[enemy_idx] in enemies:
+                                actions[action_idx] = True
+        return tuple(actions)
+
+    def _view(self, state, player):
+        view = np.zeros((4, self.board_size))
+        if player == 0:
+            for i, piece_type in enumerate([1, 2, -1, -2]):
+                for j, piece in enumerate(state[:-2]):
+                    view[i, j] = piece == piece_type
+        else:
+            for i, piece_type in enumerate([-1, -2, 1, 2]):
+                for j, piece in enumerate(state[:-2]):
+                    view[i, self.board_size - j - 1] = piece == piece_type
+        return view
 
 games = [Null, Binary, Flip, Count, Narrow,
-         Matching, Roshambo, Modulo, MNOP]
+         Matching, Roshambo, Modulo, MNOP, Checkers]
 
 if __name__ == '__main__':
     from play import main  # noqa
