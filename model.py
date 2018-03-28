@@ -111,12 +111,12 @@ class Memorize(Model):
 class MLP(Model):
     def __init__(self, *args,
                  hidden_units=[10, 10],
-                 drop_rate=0.1,
-                 batchnorm=True,
-                 activation=tf.nn.relu,
+                 drop_rate=0.0,
+                 batchnorm=False,
+                 activation=tf.tanh,
                  learning_rate=0.001,
                  combination=0.5,
-                 step_update=1,
+                 step_update=10,
                  step_trace=10,
                  step_save=10,
                  step_summary=1,
@@ -231,6 +231,7 @@ class MLP(Model):
     def _sparse_update(self, obs, q, z):
         global_step = tf.train.get_global_step()
         assert global_step is not None, 'Missing global step tensor!'
+        losses = []
         for _ in range(self.step_update):
             i = tf.train.global_step(self.sess, global_step)
             print('step:', i)
@@ -257,7 +258,8 @@ class MLP(Model):
             else:
                 loss, _, = self.sess.run([self.loss, self.train], feed_dict=feed_dict,
                                          options=run_options, run_metadata=run_metadata)
-
+            print('loss', loss)
+            losses.append(loss)
             # If we generated a trace, write it out
             if run_metadata is not None:
                 self.writer.add_run_metadata(run_metadata, 'step%d' % i)
@@ -268,6 +270,8 @@ class MLP(Model):
                 saved_path = self.saver.save(
                     self.sess, self.save_path, global_step=i)
                 print('Model saved in path:', saved_path)
+
+        return np.mean(losses)
 
 
 models = [Uniform, Linear, Memorize, MLP]

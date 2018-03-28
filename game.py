@@ -353,15 +353,15 @@ class Connect3(Game):
 
 class Nim(Game):
     ''' Nim, see https://en.wikipedia.org/wiki/Nim '''
-    
+
     def __init__(self, s=(3,5,7), p=2, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.ps = len(s)  # number of piles
         self.mp = max(s) # largest pile
         self.n_player = self.p = p
-        self.n_action = self.ps * self.mp 
+        self.n_action = self.ps * self.mp
         self.n_state = self.n_view = self.ps * self.mp + 1
-        self.st = (0,) * self.n_state 
+        self.st = (0,) * self.n_state
         for i in range(self.ps):
             for j in range(s[i]):
                 k = i * self.mp + j
@@ -375,7 +375,7 @@ class Nim(Game):
         assert action < len(state) -1 # didn't play action = player variable
         cap = (int(action / self.mp) + 1) * self.mp # beginning index of the next pile
         # remove all the stones until the next pile
-        i = action 
+        i = action
         while i < cap:
             state = state[:i] + (0,) + state[i + 1:]
             i += 1
@@ -472,11 +472,11 @@ class MNOP(Game):
         str_state = (str(i) if i >= 0 else '-' for i in state)
         board = tuple(zip_longest(*([iter(str_state)] * self.m)))
         return '\n'.join(' '.join(row) for row in board)
-        
+
 class Checkers(Game):
     ''' Checkers with multiple board sizes. '''
-    
-    def __init__(self, size=8, *args, **kwargs):
+
+    def __init__(self, size=4, *args, **kwargs):
         super().__init__(*args, **kwargs)
         assert size % 2 == 0 # Only allowing even checkers boards
         self.size = size
@@ -539,6 +539,9 @@ class Checkers(Game):
         return (1,) * num_pieces + (0,)* self.size + (-1,) * num_pieces + (0, 0, -1), 0, None
 
     def _step(self, state, player, action):
+        valid = self.valid(state, player)  # XXX expensive
+        if sum(valid) == 0:
+            return (state, None, ((-1, 1), (1, -1))[player])
         state = list(state)
         state[-3] += 1
         if state[-3] == self.max_move:
@@ -555,7 +558,6 @@ class Checkers(Game):
         if player == 1 or abs(state[piece]) == 2:
             poss_actions.extend([x[0] for x in self.jumps_bak[piece]])
             poss_actions.extend([x[0] for x in self.moves_bak[piece]])
-        #valid = self.valid(state, player)
         #sparse = tuple(i for i in range(len(valid)) if valid[i])
         #assert action in sparse
         #assert action in poss_actions, "{} {} {} {}".format(action, poss_actions, sparse, state)
@@ -563,10 +565,10 @@ class Checkers(Game):
         #    import ipdb; ipdb.set_trace()
         enemies = [-1, -2] if player == 0 else [1, 2]
         friendlies = [-1, -2] if player == 1 else [1, 2]
-        assert state[piece] in friendlies
+        assert state[piece] in friendlies, '{} {} {}'.format(state, piece, friendlies)
         row_size = self.size // 2
         row, col = divmod(piece, row_size)
-        dx = move % 2 + row % 2 - 1 
+        dx = move % 2 + row % 2 - 1
         dy = row_size if move < 2 else -row_size
         dest = piece + dx + dy
         if state[dest] == 0: #Move
@@ -576,6 +578,10 @@ class Checkers(Game):
             state[piece] = 0
             state[-1] = -1
             state[-2] = (player + 1) % 2
+            # you win if you opponent doesn't have any valid moves
+            valid = self.valid(state, state[-2])  # XXX expensive
+            if sum(valid) == 0:
+                return (state, None, ((1, -1), (-1, 1))[player])
             return (tuple(state), state[-2], None)
         assert state[dest] in enemies #Jump
         state[dest] = 0
@@ -610,14 +616,18 @@ class Checkers(Game):
             return (tuple(state), None, [[1, -1], [-1, 1]][player])
         state[-1] = -1
         state[-2] = (player + 1) % 2
+        # you win if you opponent doesn't have any valid moves
+        valid = self.valid(state, state[-2])  # XXX expensive
+        if sum(valid) == 0:
+            return (state, None, ((1, -1), (-1, 1))[player])
         return (tuple(state), state[-2], None)
-        
-        
+
+
 
     def _valid(self, state, player):
         actions = [False] * self.n_action
         board = state[:-3] if player == 0 else state[:-3][::-1]
-        
+
         enemies = [-1, -2] if player == 0 else [1, 2]
         friendlies = [-1, -2] if player == 1 else [1, 2]
         if state[-1] != -1:
@@ -625,17 +635,17 @@ class Checkers(Game):
             for action_idx, enemy_idx, land_idx in self.jumps_fwd[piece]:
                 if board[land_idx] == 0 and board[enemy_idx] in enemies:
                     actions[action_idx] = True
-            if abs(board[piece]) == 2:            
+            if abs(board[piece]) == 2:
                 for action_idx, enemy_idx, land_idx in self.jumps_bak[piece]:
                     if board[land_idx] == 0 and board[enemy_idx] in enemies:
-                        actions[action_idx] = True            
+                        actions[action_idx] = True
         else:
             for (idx, piece) in enumerate(board):
                 if piece in friendlies:
                     for action_idx, enemy_idx, land_idx in self.jumps_fwd[idx]:
                         if board[land_idx] == 0 and board[enemy_idx] in enemies:
                             actions[action_idx] = True
-                    if abs(piece) == 2:     
+                    if abs(piece) == 2:
                         for action_idx, enemy_idx, land_idx in self.jumps_bak[idx]:
                             if board[land_idx] == 0 and board[enemy_idx] in enemies:
                                 actions[action_idx] = True
@@ -645,7 +655,7 @@ class Checkers(Game):
                         for action_idx, land_idx in self.moves_fwd[idx]:
                             if board[land_idx] == 0:
                                 actions[action_idx] = True
-                        if abs(piece) == 2:                    
+                        if abs(piece) == 2:
                             for action_idx, land_idx in self.moves_bak[idx]:
                                 if board[land_idx] == 0:
                                     actions[action_idx] = True
@@ -662,7 +672,7 @@ class Checkers(Game):
                 for j, piece in enumerate(state[:-3]):
                     view[i, self.board_size - j - 1] = piece == piece_type
         return view
-        
+
     def _check(self, state, player):
         assert player == state[-2]
 
