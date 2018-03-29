@@ -170,7 +170,10 @@ class AlphaZero:
         while outcome is None:
             if player == random_agent:
                 valid = self._game.valid(state, player)
-                probs = np.array(valid, dtype=float) / sum(valid)
+                if sum(valid):
+                    probs = np.array(valid, dtype=float) / sum(valid)
+                else:
+                    return 1  # XXX hardcode random player loss
             else:
                 probs, _ = self.search(state, player)
             action = sample_probs(probs, rs=self.rs)
