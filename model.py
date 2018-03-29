@@ -110,18 +110,18 @@ class Memorize(Model):
 
 class MLP(Model):
     def __init__(self, *args,
-                 hidden_units=[10, 10],
+                 hidden_units=[250, 250],
                  drop_rate=0.0,
                  batchnorm=False,
                  activation=tf.tanh,
                  learning_rate=0.001,
                  combination=0.5,
-                 step_update=10,
-                 step_trace=10,
-                 step_save=10,
-                 step_summary=1,
+                 step_update=5,
+                 step_trace=1000,
+                 step_save=50,
+                 step_summary=50,
                  save_path=None,
-                 log_dir='/tmp/azero',
+                 log_dir='C:\\tmp\\azero8',
                  **kwargs):
         '''
         Build simple fully-connected network.
@@ -188,11 +188,14 @@ class MLP(Model):
         # Loss terms
         with tf.name_scope('loss'):
             combination = tf.constant(combination, dtype=tf.float32, name='c')
-            xent = tf.nn.softmax_cross_entropy_with_logits_v2(
-                labels=self.q, logits=self.p)
-            mse = tf.reduce_mean(tf.square(self.v - self.z), axis=1)
+            #xent = tf.nn.softmax_cross_entropy_with_logits_v2(
+            #    labels=self.q, logits=self.p)
+            #mse = tf.reduce_mean(tf.square(self.v - self.z), axis=1)
+            #self.loss = tf.reduce_mean(
+            #    xent * combination + mse * (1 - combination))
             self.loss = tf.reduce_mean(
-                xent * combination + mse * (1 - combination))
+                tf.reduce_mean(tf.square(self.v - self.z), axis=1) * (1 - combination) +
+                tf.reduce_mean(tf.square(self.p - self.q), axis=1) * combination )
             tf.add_to_collection('loss', self.loss)
             tf.summary.scalar('loss', self.loss)
 
@@ -266,7 +269,7 @@ class MLP(Model):
                 print('Saved metadata for step:', i)
 
             # Save a model checkpoint
-            if i % self.step_save == self.step_save - 1:
+            if i % self.step_save == self.step_save - 1 or i == 0:
                 saved_path = self.saver.save(
                     self.sess, self.save_path, global_step=i)
                 print('Model saved in path:', saved_path)

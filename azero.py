@@ -46,7 +46,7 @@ class AlphaZero:
                  c_puct=1.0,
                  tau=1.0,
                  eps=1e-6,
-                 sims_per_search=100):
+                 sims_per_search=300):
         ''' Train a model to play a game with the AlphaZero algorithm '''
         self.rs = np.random.RandomState(seed)
         self._game = game
@@ -104,7 +104,10 @@ class AlphaZero:
             self.simulate(state, player, tree)
         pi = np.power(tree.N, 1 / self.tau)
         if np.sum(pi) < 1e-10:
-            import ipdb; ipdb.set_trace()
+            #import ipdb; ipdb.set_trace()
+            probs = np.zeros(pi.shape)
+            probs[0] = 1.0
+            return probs, tree
         probs = pi / np.sum(pi)
         return probs, tree
 
@@ -178,11 +181,11 @@ class AlphaZero:
 if __name__ == '__main__':
     from game import Checkers  # noqa
     from model import MLP, Uniform  # noqa
-    azero = AlphaZero.make(Checkers, Uniform)
-    # azero.train(n_epochs=100, n_games=5)
-    azero.sims_per_search = 1000
-    total_outcomes = np.zeros(2)
-    for i in range(1, 100):
-        _, outcome = azero.play()
-        total_outcomes += outcome
-        print('score', total_outcomes / i)
+    azero = AlphaZero.make(Checkers, MLP)
+    azero.train(n_epochs=10000, n_games=10)
+    #azero.sims_per_search = 1000
+    #total_outcomes = np.zeros(2)
+    #for i in range(1, 100):
+    #    _, outcome = azero.play()
+    #    total_outcomes += outcome
+    #    print('score', total_outcomes / i)

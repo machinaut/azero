@@ -476,7 +476,7 @@ class MNOP(Game):
 class Checkers(Game):
     ''' Checkers with multiple board sizes. '''
 
-    def __init__(self, size=4, *args, **kwargs):
+    def __init__(self, size=8, *args, **kwargs):
         super().__init__(*args, **kwargs)
         assert size % 2 == 0 # Only allowing even checkers boards
         self.size = size
@@ -565,7 +565,10 @@ class Checkers(Game):
         #    import ipdb; ipdb.set_trace()
         enemies = [-1, -2] if player == 0 else [1, 2]
         friendlies = [-1, -2] if player == 1 else [1, 2]
-        assert state[piece] in friendlies, '{} {} {}'.format(state, piece, friendlies)
+        #assert state[piece] in friendlies, '{} {} {}'.format(state, piece, friendlies)
+        if state[piece] not in friendlies:
+            return (state, None, ((-1, 1), (1, -1))[player])
+            
         row_size = self.size // 2
         row, col = divmod(piece, row_size)
         dx = move % 2 + row % 2 - 1
@@ -618,8 +621,8 @@ class Checkers(Game):
         state[-2] = (player + 1) % 2
         # you win if you opponent doesn't have any valid moves
         valid = self.valid(state, state[-2])  # XXX expensive
-        if sum(valid) == 0:
-            return (state, None, ((1, -1), (-1, 1))[player])
+        #if sum(valid) == 0:
+        #    return (state, None, ((1, -1), (-1, 1))[player])
         return (tuple(state), state[-2], None)
 
 
